@@ -36,3 +36,14 @@
 4. 等待 Actions 运行完成，即可通过上面的在线地址访问
 
 > 首次推送后若 Actions 未自动触发，可在 **Actions** 页面手动运行 `Deploy to GitHub Pages` 工作流。
+
+## 绑定自己的域名（可选）
+1. **购买域名**
+   - 国外注册商：Cloudflare / Namecheap / GoDaddy（无需实名，推荐 `.com` / `.dev`）
+   - 国内注册商：阿里云 / 腾讯云（需实名认证；GitHub Pages 服务器在国外，**无需备案**）
+2. **配置 DNS 解析**（在域名注册商的控制台）
+   - 子域名（如 `www.example.com`）：添加 `CNAME` 记录 → `<你的用户名>.github.io`
+   - 主域名（如 `example.com`）：添加 4 条 `A` 记录 → `185.199.108.153` / `185.199.109.153` / `185.199.110.153` / `185.199.111.153`
+3. **GitHub 仓库设置**
+   - **Settings → Pages → Custom domain** 填入你的域名 → Save（GitHub 会自动提交 `CNAME` 文件）
+   - 勾选 **Enforce HTTPS** 启用强制 HTTPS（DNS 生效后即可勾选，一般几分钟到几小时）
