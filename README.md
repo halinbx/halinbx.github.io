@@ -1,6 +1,8 @@
 # 测试工具大全
 
-纯前端测试工具集，零依赖，双击 index.html 即可使用。
+[![在线使用](https://img.shields.io/badge/在线使用-halinbx.github.io%2FTestGo-2ea44f?style=for-the-badge&logo=github)](https://halinbx.github.io/TestGo/)
+
+纯前端测试工具集，零依赖，免登录、无广告，数据不出本地。双击 index.html 即可使用。
 
 ## 工具列表
 1. JSON 格式化 / 校验（格式化、压缩）
