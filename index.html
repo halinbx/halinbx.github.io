@@ -25,10 +25,40 @@
     <aside class="sidebar">
       <div class="logo">测试工具大全</div>
       <nav id="nav"></nav>
-      <div class="foot">纯前端实现 · 数据不出本地</div>
+      <div class="foot">
+        纯前端实现 · 数据不出本地<br>
+        <span id="busuanzi_container_site_pv" style="display:none">
+          总访问 <span id="busuanzi_value_site_pv"></span> 次 · 访客 <span id="busuanzi_value_site_uv"></span> 人
+        </span>
+      </div>
     </aside>
     <main id="main"></main>
   </div>
   <script src="js/app.js"></script>
+
+  <!-- 访问统计(不蒜子):零注册,页面左下角显示总 PV/UV。仅统计访问次数,不采集任何工具输入内容 -->
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  <!-- ========= 可选:接入完整统计后台(二选一,取消对应注释并填入自己的 ID) =========
+  方案 A:Google Analytics 4(全球通用,报表完整;国内部分网络加载慢)
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+
+  方案 B:百度统计(国内加载稳定)
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?在此填入32位站点ID";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+  ============================================================================ -->
 </body>
 </html>

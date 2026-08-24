@@ -25,6 +25,21 @@
 网站已通过 GitHub Pages 部署，推送 `main` 分支后自动发布：
 `https://<你的用户名>.github.io/<仓库名>/`
 
+## 查看网站访问量
+GitHub Pages **不提供**访问日志，需借助第三方统计（代码已接入）：
+
+### 方式一：不蒜子计数器（已内置，零配置）
+部署后网站**左下角**会自动显示：`总访问 N 次 · 访客 M 人`
+- 无需注册账号，推送上线即生效
+- 只统计访问次数，不采集任何工具输入内容
+
+### 方式二：接入完整统计后台（可选，看趋势/来源/地区报表）
+`index.html` 底部已预留注释模板，二选一：
+1. **Google Analytics 4**：到 [analytics.google.com](https://analytics.google.com/) 免费注册 → 创建媒体资源 → 拿到 `G-XXXXXXXXXX` ID → 取消 `index.html` 中「方案 A」的注释并填入 ID
+2. **百度统计**：到 [tongji.baidu.com](https://tongji.baidu.com/) 注册 → 新增网站 → 拿到 32 位站点 ID → 取消「方案 B」的注释并填入 ID
+
+之后在其后台即可看到每日访问趋势、访客地区、来源渠道、实时在线人数等完整报表。
+
 ## 本地部署到互联网（GitHub Pages）
 1. 在 GitHub 上新建一个仓库（例如 `test-tools`），不要勾选初始化 README
 2. 在项目目录执行：
