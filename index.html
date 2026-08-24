@@ -21,32 +21,61 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <div class="topright-note">纯前端实现 · 数据不出本地</div>
   <div class="layout">
     <aside class="sidebar">
       <div class="logo">测试工具大全</div>
       <nav id="nav"></nav>
       <div class="foot">
-        纯前端实现 · 数据不出本地<br>
-        <span id="busuanzi_container_site_pv" style="display:none">
-          总访问 <span id="busuanzi_value_site_pv"></span> 次 · 访客 <span id="busuanzi_value_site_uv"></span> 人
-        </span>
+        <span id="stat-today" style="display:none"></span>
       </div>
     </aside>
     <main id="main"></main>
   </div>
   <script src="js/app.js"></script>
 
-  <!-- 访问统计(不蒜子):零注册,页面左下角显示总 PV/UV。仅统计访问次数,不采集任何工具输入内容 -->
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <!-- 今日访问统计(Abacus 免费计数服务,无需注册,CORS 开放):
+       计数 key 带当日日期(如 pv-20260824),每天自动从 0 开始;
+       今日访客按设备去重(localStorage 标记,同一浏览器当天只计 1 次)。
+       仅统计访问次数,不采集任何工具输入内容 -->
   <script>
-    // 不蒜子容错:8 秒后若仍未加载成功(其脚本成功时会把容器设为可见),显示提示而不是一直隐藏
-    setTimeout(function () {
-      var c = document.getElementById("busuanzi_container_site_pv");
-      if (c && c.style.display === "none") {
-        c.style.display = "inline";
-        c.textContent = "统计服务暂不可用";
+    (function () {
+      var box = document.getElementById("stat-today");
+      if (!box) return;
+      var d = new Date();
+      var day = d.getFullYear()
+        + String(d.getMonth() + 1).padStart(2, "0")
+        + String(d.getDate()).padStart(2, "0");
+      var API = "https://abacus.jasoncameron.dev/hit/halinbx-testgo/";
+      function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+      function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+      function show(pv, uv) {
+        box.style.display = "inline";
+        box.textContent = "今日访问 " + pv + " 次 · 今日访客 " + uv + " 人";
       }
-    }, 8000);
+
+      fetch(API + "pv-" + day)
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          var pv = j.value;
+          if (lsGet("tg_uv_day") === day) {
+            show(pv, lsGet("tg_uv_val") || 1); // 本机今天已计入,读缓存,避免重复累计
+          } else {
+            fetch(API + "uv-" + day)
+              .then(function (r) { return r.json(); })
+              .then(function (j2) {
+                lsSet("tg_uv_day", day);
+                lsSet("tg_uv_val", j2.value);
+                show(pv, j2.value);
+              })
+              .catch(function () { show(pv, "-"); });
+          }
+        })
+        .catch(function () {
+          box.style.display = "inline";
+          box.textContent = "统计服务暂不可用";
+        });
+    })();
   </script>
 
   <!-- ========= 可选:接入完整统计后台(二选一,取消对应注释并填入自己的 ID) =========
