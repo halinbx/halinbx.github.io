@@ -38,6 +38,16 @@
 
   <!-- 访问统计(不蒜子):零注册,页面左下角显示总 PV/UV。仅统计访问次数,不采集任何工具输入内容 -->
   <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <script>
+    // 不蒜子容错:8 秒后若仍未加载成功(其脚本成功时会把容器设为可见),显示提示而不是一直隐藏
+    setTimeout(function () {
+      var c = document.getElementById("busuanzi_container_site_pv");
+      if (c && c.style.display === "none") {
+        c.style.display = "inline";
+        c.textContent = "统计服务暂不可用";
+      }
+    }, 8000);
+  </script>
 
   <!-- ========= 可选:接入完整统计后台(二选一,取消对应注释并填入自己的 ID) =========
   方案 A:Google Analytics 4(全球通用,报表完整;国内部分网络加载慢)
@@ -59,6 +69,11 @@
       s.parentNode.insertBefore(hm, s);
     })();
   </script>
+
+  方案 C:GoatCounter(免费开源、隐私友好、服务稳定,不蒜子挂掉时的最佳替代)
+  注册 goatcounter.com 得到子域名后,取消注释并替换 yoursite:
+  <script data-goatcounter="https://yoursite.goatcounter.com/count"
+          async src="https://gc.zgo.at/count.js"></script>
   ============================================================================ -->
 </body>
 </html>
