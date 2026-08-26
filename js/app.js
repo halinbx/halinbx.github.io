@@ -1104,24 +1104,23 @@ tool("qr", "二维码生成", function () {
   };
 }, "二维码 qrcode 生成 扫码 跳转 分享");
 
-// ---- Boot:左右双栏导航 + 图标 + 搜索 ----
+// ---- Boot:单栏导航 + 图标 + 搜索 ----
 var ICONS = {
   json: "{}", ts: "⏱", b64: "64", url: "%", uuid: "ID", jwt: "J", re: ".*", diff: "±", hash: "#", color: "◐",
   radix: "0x", wc: "文", case: "Aa", pwd: "***", htmlent: "&", unit: "⇄", calc: "=", datecalc: "📅", ip: "IP", qr: "▩"
 };
 var navL = document.getElementById("nav");
-var navR = document.getElementById("nav2") || navL;
 var navBtns = [];
-TOOLS.forEach(function (t, i) {
+TOOLS.forEach(function (t) {
   var b = document.createElement("button");
   b.innerHTML = '<span class="ico">' + ICONS[t.id] + "</span>" + esc(t.name);
   b.dataset.kw = (t.id + " " + t.name + " " + t.kw).toLowerCase();
   b.onclick = function () { openTool(t.id); };
-  (i < 10 ? navL : navR).appendChild(b);
+  navL.appendChild(b);
   navBtns.push(b);
 });
 
-// ---- 搜索:过滤左右两栏菜单,回车打开第一个匹配 ----
+// ---- 搜索:过滤菜单,回车打开第一个匹配 ----
 var si = document.getElementById("search");
 if (si) {
   si.oninput = function () {
