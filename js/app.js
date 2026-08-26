@@ -5,7 +5,15 @@ const main = document.getElementById("main");
 const TOOLS = [];
 
 function tool(id, name, render) { TOOLS.push({ id: id, name: name, render: render }); }
-function h(html) { main.innerHTML = html; }
+var onCleanup = [];
+function h(html) {
+  onCleanup.forEach(function (fn) { try { fn(); } catch (e) {} });
+  onCleanup = [];
+  main.innerHTML = html;
+  main.classList.remove("fadein");
+  void main.offsetWidth;
+  main.classList.add("fadein");
+}
 function q(sel) { return document.querySelector(sel); }
 function p2(n) { return String(n).padStart(2, "0"); }
 function esc(s) {
@@ -25,7 +33,7 @@ function copyText(txt, btn) {
     document.body.removeChild(ta);
   }
   function done(ok) {
-    if (!btn) return;
+    if (!btn) { toast(ok ? "✓ 已复制" : "复制失败"); return; }
     var old = btn.textContent;
     btn.textContent = ok ? "✓ 已复制" : "复制失败";
     setTimeout(function () { btn.textContent = old; }, 1200);
@@ -43,6 +51,15 @@ function copyOut(ev, id) {
   var el = document.getElementById(id || "out");
   var btn = ev && ev.target ? ev.target : null;
   copyText(el ? el.innerText : "", btn);
+}
+var toastTimer = null;
+function toast(msg) {
+  var t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.classList.remove("show"); }, 1400);
 }
 
 // ---- 纯 JS 哈希实现（不依赖 Web Crypto，http 环境也可用） ----
@@ -236,7 +253,8 @@ tool("ts", "时间戳转换", function () {
       + " | 时间戳(s) " + Math.floor(Date.now() / 1000);
   }
   tick();
-  setInterval(tick, 1000);
+  var timer = setInterval(tick, 1000);
+  onCleanup.push(function () { clearInterval(timer); });
   q("#c1").onclick = function () {
     var v = q("#t").value.trim().replace(/[^0-9]/g, "");
     if (!v) return;
@@ -669,16 +687,60 @@ tool("color", "颜色转换", function () {
   conv();
 });
 
-// Boot
+// ---- Boot:导航按钮 + 图标 ----
+var ICONS = { json: "{}", ts: "⏱", b64: "64", url: "%", uuid: "ID", pwd: "***", re: ".*", diff: "±", hash: "#", color: "◐" };
+var navBtns = [];
 TOOLS.forEach(function (t) {
   var b = document.createElement("button");
-  b.textContent = t.name;
-  b.onclick = function () {
-    var all = document.querySelectorAll("#nav button");
-    for (var i = 0; i < all.length; i++) all[i].classList.remove("active");
-    b.classList.add("active");
-    t.render();
-  };
+  b.innerHTML = '<span class="ico">' + ICONS[t.id] + "</span>" + esc(t.name);
+  b.onclick = function () { openTool(t.id); };
   nav.appendChild(b);
+  navBtns.push(b);
 });
-nav.firstChild.click();
+
+// ---- 工具切换 + hash 路由(链接可收藏,如 #pwd 直达密码工具) ----
+var currentId = null;
+function openTool(id, fromHash) {
+  var t = TOOLS.filter(function (x) { return x.id === id; })[0] || TOOLS[0];
+  currentId = t.id;
+  if (!fromHash && location.hash !== "#" + t.id) location.hash = t.id;
+  navBtns.forEach(function (b) { b.classList.remove("active"); });
+  navBtns[TOOLS.indexOf(t)].classList.add("active");
+  t.render();
+}
+window.addEventListener("hashchange", function () {
+  var id = location.hash.slice(1);
+  if (id !== currentId) openTool(id || TOOLS[0].id, true);
+});
+
+// ---- 侧边栏搜索:输入过滤 / 回车打开首个匹配 / "/" 快捷聚焦 ----
+var si = document.getElementById("search");
+if (si) {
+  si.addEventListener("input", function () {
+    var kw = si.value.trim().toLowerCase();
+    navBtns.forEach(function (b, i) {
+      b.style.display = (!kw || TOOLS[i].name.toLowerCase().indexOf(kw) >= 0) ? "" : "none";
+    });
+  });
+  si.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      var vis = navBtns.filter(function (b) { return b.style.display !== "none"; });
+      if (vis.length) { vis[0].click(); si.blur(); }
+    } else if (e.key === "Escape") {
+      si.value = "";
+      si.dispatchEvent(new Event("input"));
+      si.blur();
+    }
+  });
+  document.addEventListener("keydown", function (e) {
+    var ae = document.activeElement;
+    var typing = ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.tagName === "SELECT");
+    if (e.key === "/" && !typing) {
+      e.preventDefault();
+      si.focus();
+      si.select();
+    }
+  });
+}
+
+openTool(location.hash.slice(1) || TOOLS[0].id, true);

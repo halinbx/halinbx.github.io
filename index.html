@@ -53,7 +53,8 @@
   <div class="topright-note">纯前端实现 · 数据不出本地</div>
   <div class="layout">
     <aside class="sidebar">
-      <div class="logo">测试工具大全</div>
+      <div class="logo"><span class="logo-icon">🧰</span><b>测试工具大全</b></div>
+      <div class="search-box"><input type="text" id="search" placeholder="搜索工具… ( / )"></div>
       <nav id="nav"></nav>
       <div class="foot">
         <span id="stat-today" style="display:none"></span>
@@ -61,6 +62,7 @@
     </aside>
     <main id="main"></main>
   </div>
+  <div class="toast" id="toast"></div>
   <script src="js/app.js"></script>
 
   <!-- 今日访问统计(Abacus 免费计数服务,无需注册,CORS 开放):
