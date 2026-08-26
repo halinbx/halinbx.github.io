@@ -63,6 +63,44 @@ function toast(msg) {
 }
 
 // ---- 纯 JS 哈希实现（不依赖 Web Crypto，http 环境也可用） ----
+function md5(msg) {
+  function rl(x, c) { return ((x << c) | (x >>> (32 - c))) >>> 0; }
+  var K = [];
+  for (var i = 0; i < 64; i++) K[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 4294967296);
+  var S = [7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,
+           5,9,14,20,5,9,14,20,5,9,14,20,5,9,14,20,
+           4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,
+           6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21];
+  var l = msg.length;
+  var total = Math.ceil((l + 9) / 64) * 64;
+  var m = new Uint8Array(total);
+  m.set(msg);
+  m[l] = 0x80;
+  var dv = new DataView(m.buffer);
+  dv.setUint32(total - 8, (l * 8) >>> 0, true);
+  dv.setUint32(total - 4, Math.floor(l / 536870912), true);
+  var H = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476];
+  var w = new Uint32Array(16);
+  for (var blk = 0; blk < total; blk += 64) {
+    for (var j = 0; j < 16; j++) w[j] = dv.getUint32(blk + j * 4, true);
+    var a = H[0], b = H[1], c = H[2], d = H[3];
+    for (var t = 0; t < 64; t++) {
+      var F, g;
+      if (t < 16) { F = (b & c) | (~b & d); g = t; }
+      else if (t < 32) { F = (d & b) | (~d & c); g = (5 * t + 1) % 16; }
+      else if (t < 48) { F = b ^ c ^ d; g = (3 * t + 5) % 16; }
+      else { F = c ^ (b | ~d); g = (7 * t) % 16; }
+      F = (F + a + K[t] + w[g]) >>> 0;
+      a = d; d = c; c = b;
+      b = (b + rl(F, S[t])) >>> 0;
+    }
+    H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;
+  }
+  var out = "";
+  for (var k = 0; k < 4; k++)
+    for (var bi = 0; bi < 4; bi++) out += ((H[k] >>> (bi * 8)) & 0xff).toString(16).padStart(2, "0");
+  return out;
+}
 var ROTL32 = function (x, n) { return ((x << n) | (x >>> (32 - n))) >>> 0; };
 var ROTR32 = function (x, n) { return ((x >>> n) | (x << (32 - n))) >>> 0; };
 var HEX8 = function (x) { return ("00000000" + (x >>> 0).toString(16)).slice(-8); };
@@ -349,75 +387,47 @@ tool("uuid", "UUID 生成器", function () {
   q("#cp").onclick = copyOut;
 });
 
-// 6. Password
-tool("pwd", "随机密码生成", function () {
-  h('<h1>随机密码生成</h1><div class="desc">本地随机，三种模式，4 位分组显示更易读</div>'
-    + '<div class="row"><label>模式 <select id="mode">'
-    + '<option value="rand">随机字符</option>'
-    + '<option value="mem">易记音节</option>'
-    + '<option value="pin">PIN 码</option></select></label>'
-    + '<label>长度 <input type="text" id="len" value="16" style="width:70px"></label>'
-    + '<span id="opts" style="display:contents">'
-    + '<label><input type="checkbox" id="u" checked> 大写</label>'
-    + '<label><input type="checkbox" id="lo" checked> 小写</label>'
-    + '<label><input type="checkbox" id="num" checked> 数字</label>'
-    + '<label><input type="checkbox" id="sym" checked> 符号</label></span>'
-    + '<button class="btn" id="g">生成</button></div>'
-    + '<div class="output" id="out" style="font-size:15px"></div>'
-    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button>'
-    + '<span class="desc" style="margin:0">复制的是不带空格的原始密码</span></div>');
-  var CON = "bcdfghjklmnpqrstvwxz", VOW = "aeiou", DIG = "0123456789";
-  var last = "";
-  function level(bits) { return bits < 50 ? "弱" : bits < 80 ? "中等" : bits < 120 ? "强" : "极强"; }
-  function show(pwd, bits, note) {
-    last = pwd;
-    q("#out").className = "output ok";
-    q("#out").innerText = pwd.replace(/(.{4})(?=.)/g, "$1 ")
-      + "\n\n熵约 " + Math.round(bits) + " bits - " + level(bits) + (note ? "\n" + note : "");
+// 6. JWT 解码
+tool("jwt", "JWT 解码", function () {
+  h('<h1>JWT 解码</h1><div class="desc">查看 Header / Payload / 签名，自动换算 exp / iat 时间（纯本地解码，不验证签名）</div>'
+    + '<textarea id="s" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"></textarea>'
+    + '<div class="row"><button class="btn" id="go">解码</button></div>'
+    + '<div class="output" id="out"></div>'
+    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
+  function b64u(s) { return s.replace(/-/g, "+").replace(/_/g, "/"); }
+  function dec(seg) { return JSON.parse(decodeURIComponent(escape(atob(b64u(seg))))); }
+  function ts(pl, k) {
+    if (typeof pl[k] !== "number") return "";
+    var d = new Date(pl[k] * 1000);
+    return "\n" + k + " 对应时间  " + d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate())
+      + " " + p2(d.getHours()) + ":" + p2(d.getMinutes()) + ":" + p2(d.getSeconds());
   }
-  q("#mode").onchange = function () {
-    var m = q("#mode").value;
-    q("#opts").style.display = m === "rand" ? "contents" : "none";
-    q("#len").value = m === "pin" ? "6" : m === "mem" ? "9" : "16";
-  };
-  q("#g").onclick = function () {
-    var mode = q("#mode").value;
-    var len = Math.min(64, Math.max(4, +q("#len").value || 16));
-    var arr = new Uint32Array(len + 2);
-    crypto.getRandomValues(arr);
-    var i, pwd = "";
-    if (mode === "pin") {
-      len = Math.min(12, Math.max(4, len));
-      for (i = 0; i < len; i++) pwd += DIG[arr[i] % 10];
-      show(pwd, len * Math.log2(10), "");
-      return;
-    }
-    if (mode === "mem") {
-      len = Math.min(21, Math.max(6, len));
-      var n = Math.floor(len / 3);
-      for (i = 0; i < n; i++) pwd += CON[arr[i] % CON.length] + VOW[arr[i + 1] % VOW.length];
-      pwd += DIG[arr[0] % 10] + DIG[arr[n] % 10];
-      pwd = pwd[0].toUpperCase() + pwd.slice(1);
-      show(pwd, n * Math.log2(CON.length * VOW.length) + 2 * Math.log2(10), "音节+数字结构，便于记忆");
-      return;
-    }
-    var pool = "";
-    if (q("#u").checked) pool += "ABCDEFGHJKLMNPQRSTUVWXYZ";
-    if (q("#lo").checked) pool += "abcdefghijkmnopqrstuvwxyz";
-    if (q("#num").checked) pool += "23456789";
-    if (q("#sym").checked) pool += "!@#$%^&*()-_=+[]{}";
-    if (!pool) {
+  q("#go").onclick = function () {
+    var parts = q("#s").value.trim().replace(/^Bearer\s+/i, "").split(".");
+    if (parts.length < 2) {
       q("#out").className = "output err";
-      q("#out").innerText = "X 至少选择一种字符集";
+      q("#out").innerText = "X 格式无效：应为 header.payload.signature 三段（以 . 分隔）";
       return;
     }
-    len = Math.min(64, Math.max(6, len));
-    for (i = 0; i < len; i++) pwd += pool[arr[i] % pool.length];
-    var tip = (!q("#u").checked && !q("#lo").checked) ? "⚠ 当前仅数字/符号组成，如需常规密码请勾选字母" : "";
-    show(pwd, len * Math.log2(pool.length), tip);
+    var head, pl;
+    try { head = dec(parts[0]); } catch (e) {
+      q("#out").className = "output err"; q("#out").innerText = "X Header 解码失败（不是合法 Base64URL）"; return;
+    }
+    try { pl = dec(parts[1]); } catch (e) {
+      q("#out").className = "output err"; q("#out").innerText = "X Payload 解码失败（不是合法 Base64URL）"; return;
+    }
+    var status = "";
+    if (typeof pl.exp === "number") {
+      status = "\n\n过期状态  " + (pl.exp * 1000 < Date.now() ? "⚠ 已过期" : "✓ 未过期");
+    }
+    q("#out").className = "output ok";
+    q("#out").innerText = "Header\n" + JSON.stringify(head, null, 2)
+      + "\n\nPayload\n" + JSON.stringify(pl, null, 2)
+      + ts(pl, "iat") + ts(pl, "nbf") + ts(pl, "exp") + status
+      + "\n\nSignature\n" + (parts[2] || "(无)");
   };
-  q("#cp").onclick = function (ev) { copyText(last, ev.target); };
-  q("#g").click();
+  q("#s").oninput = function () { if (q("#s").value.trim()) q("#go").click(); };
+  q("#cp").onclick = copyOut;
 });
 
 // 7. Regex
@@ -571,7 +581,7 @@ tool("diff", "文本对比", function () {
 
 // 9. Hash
 tool("hash", "哈希计算", function () {
-  h('<h1>哈希计算</h1><div class="desc">SHA-1 / SHA-256 / SHA-512（纯 JS 实现，http 环境也可用）</div>'
+  h('<h1>哈希计算</h1><div class="desc">MD5 / SHA-1 / SHA-256 / SHA-512（纯 JS 实现，http 环境也可用）</div>'
     + '<textarea id="s" placeholder="输入文本"></textarea>'
     + '<div class="row"><button class="btn" id="go">计算</button></div>'
     + '<div class="output" id="out"></div>'
@@ -579,7 +589,7 @@ tool("hash", "哈希计算", function () {
   q("#go").onclick = function () {
     var data = new TextEncoder().encode(q("#s").value);
     q("#out").className = "output ok";
-    q("#out").innerText = "SHA-1:   " + sha1(data) + "\nSHA-256: " + sha256(data) + "\nSHA-512: " + sha512(data);
+    q("#out").innerText = "MD5:     " + md5(data) + "\nSHA-1:   " + sha1(data) + "\nSHA-256: " + sha256(data) + "\nSHA-512: " + sha512(data);
   };
   q("#go").click();
   q("#cp").onclick = copyOut;
@@ -688,7 +698,7 @@ tool("color", "颜色转换", function () {
 });
 
 // ---- Boot:导航按钮 + 图标 ----
-var ICONS = { json: "{}", ts: "⏱", b64: "64", url: "%", uuid: "ID", pwd: "***", re: ".*", diff: "±", hash: "#", color: "◐" };
+var ICONS = { json: "{}", ts: "⏱", b64: "64", url: "%", uuid: "ID", jwt: "J", re: ".*", diff: "±", hash: "#", color: "◐" };
 var navBtns = [];
 TOOLS.forEach(function (t) {
   var b = document.createElement("button");
