@@ -218,8 +218,12 @@ tool("pwd", "随机密码生成", function () {
     for (var i = 0; i < len; i++) pwd += pool[arr[i] % pool.length];
     var bits = Math.round(len * Math.log2(pool.length));
     var lv = bits < 50 ? "弱" : bits < 80 ? "中等" : bits < 120 ? "强" : "极强";
+    var tip = "";
+    if (!q("#u").checked && !q("#lo").checked) {
+      tip = "\n\n⚠ 提示:当前未勾选大写/小写字母,密码仅由数字和符号组成(看起来像乱码属正常)。需要常规密码请勾选字母选项。";
+    }
     q("#out").className = "output ok";
-    q("#out").innerText = pwd + "\n\n熵约 " + bits + " bits - " + lv;
+    q("#out").innerText = pwd + "\n\n熵约 " + bits + " bits - " + lv + tip;
   };
   q("#cp").onclick = copyOut;
 });
