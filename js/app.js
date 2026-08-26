@@ -708,7 +708,7 @@ TOOLS.forEach(function (t) {
   navBtns.push(b);
 });
 
-// ---- 工具切换 + hash 路由(链接可收藏,如 #pwd 直达密码工具) ----
+// ---- 工具切换 + hash 路由(链接可收藏,如 #jwt 直达 JWT 解码) ----
 var currentId = null;
 function openTool(id, fromHash) {
   var t = TOOLS.filter(function (x) { return x.id === id; })[0] || TOOLS[0];
@@ -722,35 +722,5 @@ window.addEventListener("hashchange", function () {
   var id = location.hash.slice(1);
   if (id !== currentId) openTool(id || TOOLS[0].id, true);
 });
-
-// ---- 侧边栏搜索:输入过滤 / 回车打开首个匹配 / "/" 快捷聚焦 ----
-var si = document.getElementById("search");
-if (si) {
-  si.addEventListener("input", function () {
-    var kw = si.value.trim().toLowerCase();
-    navBtns.forEach(function (b, i) {
-      b.style.display = (!kw || TOOLS[i].name.toLowerCase().indexOf(kw) >= 0) ? "" : "none";
-    });
-  });
-  si.addEventListener("keydown", function (e) {
-    if (e.key === "Enter") {
-      var vis = navBtns.filter(function (b) { return b.style.display !== "none"; });
-      if (vis.length) { vis[0].click(); si.blur(); }
-    } else if (e.key === "Escape") {
-      si.value = "";
-      si.dispatchEvent(new Event("input"));
-      si.blur();
-    }
-  });
-  document.addEventListener("keydown", function (e) {
-    var ae = document.activeElement;
-    var typing = ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.tagName === "SELECT");
-    if (e.key === "/" && !typing) {
-      e.preventDefault();
-      si.focus();
-      si.select();
-    }
-  });
-}
 
 openTool(location.hash.slice(1) || TOOLS[0].id, true);
