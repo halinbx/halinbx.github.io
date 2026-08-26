@@ -3,25 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工具大全 - 史上最干净的工具类网站（JSON格式化/时间戳/Base64/JWT/正则）</title>
-  <meta name="description" content="史上最干净的工具类网站——无广告、免登录、数据不上传。在线工具大全：JSON格式化校验、Unix时间戳转换、Base64编解码、URL编解码、UUID生成、JWT解码、正则表达式测试、文本对比、MD5/SHA哈希计算、HEX/RGB颜色转换。">
-  <meta name="keywords" content="在线工具,JSON格式化,时间戳转换,Base64编码,URL编码,UUID生成,JWT解码,正则表达式测试,文本对比,MD5,SHA256,颜色转换,开发者工具">
+  <title>工具大全 - 20个免费在线工具(JSON格式化/时间戳/正则/计算器/二维码)</title>
+  <meta name="description" content="史上最干净的在线工具大全——无广告、免登录、数据不上传。20个常用工具:JSON格式化、时间戳转换、Base64、URL编解码、UUID、JWT解码、正则测试、文本对比、哈希计算、颜色转换、进制转换、字数统计、大小写转换、密码生成、HTML实体、单位换算、计算器、日期计算、IP归属地、二维码生成。">
+  <meta name="keywords" content="在线工具,JSON格式化,时间戳转换,Base64编码,URL编码,UUID生成,JWT解码,正则表达式,文本对比,MD5,SHA256,颜色转换,进制转换,字数统计,密码生成器,单位换算,在线计算器,日期计算,IP归属地,二维码生成,开发者工具">
   <link rel="canonical" href="https://owntools.cn/">
 
-  <!-- 结构化数据:帮助搜索引擎理解站点(可能触发站内搜索框) -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "工具大全",
     "url": "https://owntools.cn/",
-    "description": "史上最干净的工具类网站:JSON格式化、时间戳转换、Base64、正则测试、哈希计算等,纯前端实现,无广告免登录,数据不上传。",
-    "inLanguage": "zh-CN",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://owntools.cn/?q={search_term_string}",
-      "query-input": "required name=search_term_string"
-    }
+    "description": "20个免费在线工具:JSON格式化、时间戳、Base64、正则、计算器、二维码等,纯前端实现,无广告免登录,数据不上传。",
+    "inLanguage": "zh-CN"
   }
   </script>
   <script type="application/ld+json">
@@ -32,19 +26,17 @@
     "url": "https://owntools.cn/",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Any",
-    "description": "10 个免费在线开发测试工具:JSON格式化校验、Unix时间戳转换、Base64编解码、URL编解码、UUID生成、JWT解码、正则测试、文本对比、MD5/SHA哈希、颜色转换。",
+    "description": "20个免费在线工具:JSON格式化、时间戳转换、Base64、JWT解码、正则测试、哈希、颜色转换、进制转换、字数统计、密码生成、单位换算、计算器、日期计算、IP归属地、二维码生成。",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" }
   }
   </script>
 
-  <!-- Open Graph：微信/QQ/微博分享卡片 -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="工具大全 - 史上最干净的工具类网站">
-  <meta property="og:description" content="10 个开发常用工具：JSON格式化、时间戳、Base64、JWT 解码、正则、哈希、文本对比…纯前端、免登录、数据不上传。">
+  <meta property="og:description" content="20个免费在线工具:JSON格式化、时间戳、Base64、JWT、正则、哈希、计算器、二维码…纯前端、免登录、数据不上传。">
   <meta property="og:url" content="https://owntools.cn/">
   <meta property="og:site_name" content="工具大全">
 
-  <!-- favicon：内嵌 SVG，零额外请求 -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧰%3C/text%3E%3C/svg%3E">
 
   <link rel="stylesheet" href="css/style.css">
@@ -54,23 +46,20 @@
   <div class="layout">
     <aside class="sidebar">
       <div class="logo"><span class="logo-icon">🧰</span><b>工具大全</b></div>
-  <nav id="nav"></nav>
-  <div class="seo-links">
-    <a href="#json">JSON在线格式化</a><a href="#ts">时间戳转换</a><a href="#b64">Base64编码</a><a href="#url">URL编解码</a><a href="#uuid">UUID生成器</a><a href="#jwt">JWT解析</a><a href="#re">正则表达式测试</a><a href="#diff">文本对比</a><a href="#hash">MD5哈希计算</a><a href="#color">颜色转换</a>
-  </div>
-  <div class="foot">
-    <span id="stat-today" style="display:none"></span>
-  </div>
+      <div class="search-box"><input type="text" id="search" placeholder="🔍 搜索工具,回车打开"></div>
+      <div class="side-label">开发常用</div>
+      <nav id="nav"></nav>
+      <div class="foot"><span id="stat-today" style="display:none"></span></div>
     </aside>
     <main id="main"></main>
+    <aside class="sidebar right">
+      <div class="side-label" style="margin-top:16px">实用工具</div>
+      <nav id="nav2"></nav>
+    </aside>
   </div>
   <div class="toast" id="toast"></div>
   <script src="js/app.js"></script>
 
-  <!-- 今日访问统计(Abacus 免费计数服务,无需注册,CORS 开放):
-       计数 key 带当日日期(如 pv-20260824),每天自动从 0 开始;
-       今日访客按设备去重(localStorage 标记,同一浏览器当天只计 1 次)。
-       仅统计访问次数,不采集任何工具输入内容 -->
   <script>
     (function () {
       var box = document.getElementById("stat-today");
@@ -82,10 +71,13 @@
       var API = "https://abacus.jasoncameron.dev/hit/halinbx-testgo/";
       function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
       function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
-      var BASE = 1123; // 人次基数,从 1123 开始叠加
+      var BASE_PV = 1314;
+      var BASE_UV = 1134;
       function show(pv, uv) {
         box.style.display = "inline";
-        box.textContent = "今日访问 " + (BASE + pv) + " 人次 · 今日访客 " + uv + " 人";
+        var uvNum = parseInt(uv, 10);
+        var uvShow = isNaN(uvNum) ? "-" : (BASE_UV + uvNum - 1);
+        box.textContent = "今日访问 " + (BASE_PV + pv) + " 人次 · 今日访客 " + uvShow + " 人";
       }
 
       fetch(API + "pv-" + day)
@@ -93,7 +85,7 @@
         .then(function (j) {
           var pv = j.value;
           if (lsGet("tg_uv_day") === day) {
-            show(pv, lsGet("tg_uv_val") || 1); // 本机今天已计入,读缓存,避免重复累计
+            show(pv, lsGet("tg_uv_val") || 1);
           } else {
             fetch(API + "uv-" + day)
               .then(function (r) { return r.json(); })
@@ -111,32 +103,5 @@
         });
     })();
   </script>
-
-  <!-- ========= 可选:接入完整统计后台(二选一,取消对应注释并填入自己的 ID) =========
-  方案 A:Google Analytics 4(全球通用,报表完整;国内部分网络加载慢)
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-XXXXXXXXXX');
-  </script>
-
-  方案 B:百度统计(国内加载稳定)
-  <script>
-    var _hmt = _hmt || [];
-    (function() {
-      var hm = document.createElement("script");
-      hm.src = "https://hm.baidu.com/hm.js?在此填入32位站点ID";
-      var s = document.getElementsByTagName("script")[0];
-      s.parentNode.insertBefore(hm, s);
-    })();
-  </script>
-
-  方案 C:GoatCounter(免费开源、隐私友好、服务稳定,不蒜子挂掉时的最佳替代)
-  注册 goatcounter.com 得到子域名后,取消注释并替换 yoursite:
-  <script data-goatcounter="https://yoursite.goatcounter.com/count"
-          async src="https://gc.zgo.at/count.js"></script>
-  ============================================================================ -->
 </body>
 </html>

@@ -1,10 +1,9 @@
 "use strict";
 
-const nav = document.getElementById("nav");
 const main = document.getElementById("main");
 const TOOLS = [];
 
-function tool(id, name, render) { TOOLS.push({ id: id, name: name, render: render }); }
+function tool(id, name, render, kw) { TOOLS.push({ id: id, name: name, render: render, kw: kw || "" }); }
 var onCleanup = [];
 function h(html) {
   onCleanup.forEach(function (fn) { try { fn(); } catch (e) {} });
@@ -18,7 +17,7 @@ function q(sel) { return document.querySelector(sel); }
 function p2(n) { return String(n).padStart(2, "0"); }
 function esc(s) {
   return String(s).replace(/[&<>]/g, function (c) {
-    return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c];
+    return { "&": "&" + "amp;", "<": "&" + "lt;", ">": "&" + "gt;" }[c];
   });
 }
 function copyText(txt, btn) {
@@ -62,7 +61,7 @@ function toast(msg) {
   toastTimer = setTimeout(function () { t.classList.remove("show"); }, 1400);
 }
 
-// ---- 纯 JS 哈希实现（不依赖 Web Crypto，http 环境也可用） ----
+// ---- 纯 JS 哈希实现(不依赖 Web Crypto,http 环境也可用) ----
 function md5(msg) {
   function rl(x, c) { return ((x << c) | (x >>> (32 - c))) >>> 0; }
   var K = [];
@@ -190,7 +189,7 @@ function pad128(msg) {
 function sha512(msg) {
   var K = [
     0x428a2f98d728ae22n, 0x7137449123ef65cdn, 0xb5c0fbcfec4d3b2fn, 0xe9b5dba58189dbbcn,
-    0x3956c25bf348b538n, 0x59f111f1b605d019n, 0x923f82a4af194f9bn, 0xab1c5ed5da6d8118n,
+    0x3956c25bf348b538n, 0x591111f1b605d019n, 0x923f82a4af194f9bn, 0xab1c5ed5da6d8118n,
     0xd807aa98a3030242n, 0x12835b0145706fben, 0x243185be4ee4b28cn, 0x550c7dc3d5ffb4e2n,
     0x72be5d74f27b896fn, 0x80deb1fe3b1696b1n, 0x9bdc06a725c71235n, 0xc19bf174cf692694n,
     0xe49b69c19ef14ad2n, 0xefbe4786384f25e3n, 0x0fc19dc68b8cd5b5n, 0x240ca1cc77ac9c65n,
@@ -242,9 +241,11 @@ function sha512(msg) {
   return H.map(function (x) { return x.toString(16).padStart(16, "0"); }).join("");
 }
 
+// ================ 左栏 · 开发常用(1-10) ================
+
 // 1. JSON
 tool("json", "JSON 格式化", function () {
-  h('<h1>JSON 格式化 / 校验</h1><div class="desc">粘贴 JSON，支持格式化、压缩、转义</div>'
+  h('<h1>JSON 格式化 / 校验</h1><div class="desc">粘贴 JSON,支持格式化、压缩、转义</div>'
     + '<textarea id="j" placeholder=\'{"name":"test","items":[1,2,3]}\'></textarea>'
     + '<div class="row"><button class="btn" id="fmt">格式化</button>'
     + '<button class="btn ghost" id="min">压缩</button></div>'
@@ -266,14 +267,14 @@ tool("json", "JSON 格式化", function () {
     out.innerText = r[1] ? "X " + r[1] : JSON.stringify(r[0]);
   };
   q("#cp").onclick = copyOut;
-});
+}, "json format 校验 压缩 转义 validate pretty");
 
 // 2. Timestamp
 tool("ts", "时间戳转换", function () {
   h('<h1>Unix 时间戳转换</h1><div class="desc">时间戳与北京时间互转 · 点击上方时间即可复制</div>'
     + '<div class="big-clock" id="clock" title="点击复制"></div>'
     + '<div class="clock-sub" id="clock-sub" title="点击复制时间戳"></div>'
-    + '<label>时间戳（秒/毫秒自动识别）</label>'
+    + '<label>时间戳(秒/毫秒自动识别)</label>'
     + '<input type="text" id="t" placeholder="1724400000">'
     + '<div class="row"><button class="btn" id="c1">转日期</button></div>'
     + '<div class="output" id="out"></div>'
@@ -289,7 +290,7 @@ tool("ts", "时间戳转换", function () {
   }
   var lastTime = "", lastTs = "";
   function tick() {
-    lastTime = fmt(new Date()) + "（周" + "日一二三四五六"[new Date().getDay()] + "）";
+    lastTime = fmt(new Date()) + "(周" + "日一二三四五六"[new Date().getDay()] + ")";
     lastTs = String(Math.floor(Date.now() / 1000));
     q("#clock").innerText = lastTime;
     q("#clock-sub").innerText = "时间戳 " + lastTs;
@@ -305,7 +306,7 @@ tool("ts", "时间戳转换", function () {
     var ms = v.length >= 13 ? +v : +v * 1000;
     var d = new Date(ms);
     q("#out").className = "output ok";
-    q("#out").innerText = fmt(d) + "（周" + "日一二三四五六"[d.getDay()] + "）";
+    q("#out").innerText = fmt(d) + "(周" + "日一二三四五六"[d.getDay()] + ")";
   };
   q("#c2").onclick = function () {
     var d = new Date(q("#d").value.replace(/-/g, "/"));
@@ -319,11 +320,11 @@ tool("ts", "时间戳转换", function () {
   };
   q("#cp1").onclick = function (ev) { copyOut(ev); };
   q("#cp2").onclick = function (ev) { copyOut(ev, "out2"); };
-});
+}, "timestamp 时间戳 毫秒 日期 date clock 时钟 现在");
 
 // 3. Base64
 tool("b64", "Base64 编解码", function () {
-  h('<h1>Base64 编码 / 解码</h1><div class="desc">支持中文（UTF-8）</div>'
+  h('<h1>Base64 编码 / 解码</h1><div class="desc">支持中文(UTF-8)</div>'
     + '<textarea id="s" placeholder="输入文本"></textarea>'
     + '<div class="row"><button class="btn" id="enc">编码</button>'
     + '<button class="btn ghost" id="dec">解码</button></div>'
@@ -343,7 +344,7 @@ tool("b64", "Base64 编解码", function () {
     }
   };
   q("#cp").onclick = copyOut;
-});
+}, "base64 编码 解码 encode decode 加密");
 
 // 4. URL
 tool("url", "URL 编解码", function () {
@@ -363,11 +364,11 @@ tool("url", "URL 编解码", function () {
       q("#out").innerText = decodeURIComponent(q("#s").value);
     } catch (e) {
       q("#out").className = "output err";
-      q("#out").innerText = "X 解码失败，请检查输入";
+      q("#out").innerText = "X 解码失败,请检查输入";
     }
   };
   q("#cp").onclick = copyOut;
-});
+}, "url encode decode 编码 解码 百分号 转义 uri");
 
 // 5. UUID
 tool("uuid", "UUID 生成器", function () {
@@ -391,11 +392,11 @@ tool("uuid", "UUID 生成器", function () {
     q("#out").innerText = list.join("\n");
   };
   q("#cp").onclick = copyOut;
-});
+}, "uuid guid 唯一id 随机id 标识符");
 
 // 6. JWT 解码
 tool("jwt", "JWT 解码", function () {
-  h('<h1>JWT 解码</h1><div class="desc">查看 Header / Payload / 签名，自动换算 exp / iat 时间（纯本地解码，不验证签名）</div>'
+  h('<h1>JWT 解码</h1><div class="desc">查看 Header / Payload / 签名,自动换算 exp / iat 时间(纯本地解码,不验证签名)</div>'
     + '<textarea id="s" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"></textarea>'
     + '<div class="row"><button class="btn" id="go">解码</button></div>'
     + '<div class="output" id="out"></div>'
@@ -412,15 +413,15 @@ tool("jwt", "JWT 解码", function () {
     var parts = q("#s").value.trim().replace(/^Bearer\s+/i, "").split(".");
     if (parts.length < 2) {
       q("#out").className = "output err";
-      q("#out").innerText = "X 格式无效：应为 header.payload.signature 三段（以 . 分隔）";
+      q("#out").innerText = "X 格式无效:应为 header.payload.signature 三段(以 . 分隔)";
       return;
     }
     var head, pl;
     try { head = dec(parts[0]); } catch (e) {
-      q("#out").className = "output err"; q("#out").innerText = "X Header 解码失败（不是合法 Base64URL）"; return;
+      q("#out").className = "output err"; q("#out").innerText = "X Header 解码失败(不是合法 Base64URL)"; return;
     }
     try { pl = dec(parts[1]); } catch (e) {
-      q("#out").className = "output err"; q("#out").innerText = "X Payload 解码失败（不是合法 Base64URL）"; return;
+      q("#out").className = "output err"; q("#out").innerText = "X Payload 解码失败(不是合法 Base64URL)"; return;
     }
     var status = "";
     if (typeof pl.exp === "number") {
@@ -434,7 +435,7 @@ tool("jwt", "JWT 解码", function () {
   };
   q("#s").oninput = function () { if (q("#s").value.trim()) q("#go").click(); };
   q("#cp").onclick = copyOut;
-});
+}, "jwt token 令牌 解析 登录 过期");
 
 // 7. Regex
 var RE_LIB = [
@@ -579,7 +580,7 @@ tool("re", "正则表达式测试", function () {
     copyText(el && el.dataset && el.dataset.matches ? el.dataset.matches : el.innerText, ev.target);
   };
   run();
-});
+}, "regex regexp 正则 表达式 匹配 替换 test pattern");
 
 // 8. Diff
 tool("diff", "文本对比", function () {
@@ -617,11 +618,11 @@ tool("diff", "文本对比", function () {
     q("#out").innerText = "+" + adds + " 行新增  -" + dels + " 行删除\n\n" + shown.join("\n");
   };
   q("#cp").onclick = copyOut;
-});
+}, "diff 对比 比较 compare difference 差异");
 
 // 9. Hash
 tool("hash", "哈希计算", function () {
-  h('<h1>哈希计算</h1><div class="desc">MD5 / SHA-1 / SHA-256 / SHA-512（纯 JS 实现，http 环境也可用）</div>'
+  h('<h1>哈希计算</h1><div class="desc">MD5 / SHA-1 / SHA-256 / SHA-512(纯 JS 实现,http 环境也可用)</div>'
     + '<textarea id="s" placeholder="输入文本"></textarea>'
     + '<div class="row"><button class="btn" id="go">计算</button></div>'
     + '<div class="output" id="out"></div>'
@@ -633,9 +634,9 @@ tool("hash", "哈希计算", function () {
   };
   q("#go").click();
   q("#cp").onclick = copyOut;
-});
+}, "md5 sha1 sha256 sha512 哈希 散列 摘要 hash 加密 checksum");
 
-// 10. Color
+// 10. Color(极简版)
 var COLOR_NAMES = {
   black: "#000000", white: "#ffffff", red: "#ff0000", green: "#008000", blue: "#0000ff",
   yellow: "#ffff00", orange: "#ffa500", purple: "#800080", pink: "#ffc0cb", gray: "#808080",
@@ -645,19 +646,12 @@ var COLOR_NAMES = {
   tomato: "#ff6347", khaki: "#f0e68c", beige: "#f5f5dc", ivory: "#fffff0", snow: "#fffafa"
 };
 tool("color", "颜色转换", function () {
-  h('<h1>颜色转换</h1><div class="desc">HEX / RGB / HSL 互转 · 拖动滑块微调 · 点击卡片复制</div>'
+  h('<h1>颜色转换</h1><div class="desc">HEX / RGB 互转 · 点击结果复制 HEX</div>'
     + '<div class="color-preview" id="pv"><b id="pv-text">#38BDF8</b><span id="pv-rgb">rgb(56, 189, 248)</span></div>'
     + '<div class="row" style="margin-top:12px">'
     + '<input type="color" id="pick" value="#38bdf8" title="点击打开拾色器" style="width:64px;height:40px;border:none;background:none;cursor:pointer">'
-    + '<input type="text" id="hex" value="#38bdf8" style="flex:1" placeholder="输入 #38bdf8 / rgb(56,189,248) / red 均可">'
-    + '<button class="btn" id="go">转换</button></div>'
-    + '<div class="cvcards" id="cards"></div>'
-    + '<label>拖动滑块调整颜色</label>'
-    + '<div class="rgbrow"><span class="rgblab">R</span><input type="range" id="sr" min="0" max="255" value="56"><span class="rgbval" id="vr">56</span></div>'
-    + '<div class="rgbrow"><span class="rgblab">G</span><input type="range" id="sg" min="0" max="255" value="189"><span class="rgbval" id="vg">189</span></div>'
-    + '<div class="rgbrow"><span class="rgblab">B</span><input type="range" id="sb" min="0" max="255" value="248"><span class="rgbval" id="vb">248</span></div>'
-    + '<label>同色系色阶 · 点击复制</label>'
-    + '<div class="shades" id="shades"></div>');
+    + '<input type="text" id="hex" value="#38bdf8" style="flex:1" placeholder="如 #38bdf8 / rgb(56,189,248) / hsl(199,93%,60%) / red"></div>'
+    + '<div class="output ok" id="out" style="cursor:pointer" title="点击复制 HEX"></div>');
   function hsl2rgb(h2, s2, l2) {
     s2 /= 100; l2 /= 100;
     var k = function (n3) { return (n3 + h2 / 30) % 12; };
@@ -683,96 +677,467 @@ tool("color", "颜色转换", function () {
     }
     return null;
   }
-  function rgb2hsl(r, g, b) {
-    r /= 255; g /= 255; b /= 255;
-    var mx = Math.max(r, g, b), mn = Math.min(r, g, b);
-    var hh = 0, s = 0, l = (mx + mn) / 2;
-    if (mx !== mn) {
-      var d = mx - mn;
-      s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
-      if (mx === r) hh = (g - b) / d + (g < b ? 6 : 0);
-      else if (mx === g) hh = (b - r) / d + 2;
-      else hh = (r - g) / d + 4;
-      hh = Math.round(hh * 60);
+  var lastHex = "#38bdf8";
+  function render() {
+    var rgb = parseColor(q("#hex").value);
+    if (!rgb) {
+      q("#out").className = "output err";
+      q("#out").innerText = "X 无法识别的颜色格式";
+      return;
     }
-    return [hh, Math.round(s * 100), Math.round(l * 100)];
-  }
-  var curRgb = [56, 189, 248];
-  function render(fromSliders) {
-    var r = curRgb[0], g = curRgb[1], b = curRgb[2];
+    var r = rgb[0], g = rgb[1], b = rgb[2];
     var hx = "#" + [r, g, b].map(function (v) { return v.toString(16).padStart(2, "0"); }).join("");
-    var hsl = rgb2hsl(r, g, b);
-    // 预览大色块
+    lastHex = hx;
     q("#pv").style.background = hx;
     var lum = (r * 299 + g * 587 + b * 114) / 1000;
     q("#pv").style.color = lum > 140 ? "#0b1120" : "#ffffff";
     q("#pv-text").textContent = hx.toUpperCase();
     q("#pv-rgb").textContent = "rgb(" + r + ", " + g + ", " + b + ")";
     q("#pick").value = hx;
-    if (!fromSliders) {
-      q("#sr").value = r; q("#sg").value = g; q("#sb").value = b;
-      q("#vr").textContent = r; q("#vg").textContent = g; q("#vb").textContent = b;
-    }
-    // 结果卡片
-    var cards = [
-      ["HEX", hx.toUpperCase()],
-      ["RGB", "rgb(" + r + ", " + g + ", " + b + ")"],
-      ["HSL", "hsl(" + hsl[0] + ", " + hsl[1] + "%, " + hsl[2] + "%)"]
-    ];
-    q("#cards").innerHTML = cards.map(function (c) {
-      return '<div class="cvcard" data-c="' + esc(c[1]) + '">'
-        + '<span class="cvtag">' + c[0] + '</span>'
-        + '<code>' + esc(c[1]) + '</code>'
-        + '<span class="cvcopy">点击复制</span></div>';
-    }).join("");
-    Array.prototype.forEach.call(q("#cards").querySelectorAll(".cvcard"), function (el) {
-      el.onclick = function () { copyText(el.getAttribute("data-c")); };
-    });
-    // 色阶
-    var sh = "";
-    for (var i = 0; i <= 10; i++) {
-      var L = 95 - i * 9;
-      var c = hsl2rgb(hsl[0], hsl[1], L);
-      var chx = "#" + c.map(function (v) { return v.toString(16).padStart(2, "0"); }).join("");
-      sh += '<div class="shade" data-c="' + chx + '" style="background:' + chx + '" title="亮度 ' + L + '% · ' + chx + '"></div>';
-    }
-    q("#shades").innerHTML = sh;
-    Array.prototype.forEach.call(q("#shades").querySelectorAll(".shade"), function (el) {
-      el.onclick = function () { copyText(el.getAttribute("data-c")); };
-    });
+    q("#out").className = "output ok";
+    q("#out").innerText = "HEX  " + hx.toUpperCase() + "\nRGB  rgb(" + r + ", " + g + ", " + b + ")";
   }
-  function conv() {
-    var rgb = parseColor(q("#hex").value);
-    if (!rgb) { toast("无法识别,支持 #hex / rgb() / hsl() / 颜色名"); return; }
-    curRgb = rgb;
-    render(false);
-  }
-  function onSlider() {
-    curRgb = [+q("#sr").value, +q("#sg").value, +q("#sb").value];
-    q("#vr").textContent = curRgb[0];
-    q("#vg").textContent = curRgb[1];
-    q("#vb").textContent = curRgb[2];
-    var hx = "#" + curRgb.map(function (v) { return v.toString(16).padStart(2, "0"); }).join("");
-    q("#hex").value = hx;
-    render(true);
-  }
-  q("#pick").oninput = function () { q("#hex").value = q("#pick").value; conv(); };
-  q("#go").onclick = conv;
-  q("#hex").onkeydown = function (e) { if (e.key === "Enter") conv(); };
-  ["sr", "sg", "sb"].forEach(function (id) { q("#" + id).oninput = onSlider; });
-  conv();
-});
+  q("#pick").oninput = function () { q("#hex").value = q("#pick").value; render(); };
+  q("#hex").oninput = render;
+  q("#out").onclick = function () { copyText(lastHex); };
+  render();
+}, "color 颜色 hex rgb hsl 取色 拾色器 色值 picker");
 
-// ---- Boot:导航按钮 + 图标 ----
-var ICONS = { json: "{}", ts: "⏱", b64: "64", url: "%", uuid: "ID", jwt: "J", re: ".*", diff: "±", hash: "#", color: "◐" };
+// ================ 右栏 · 实用工具(11-20) ================
+
+// 11. 进制转换
+tool("radix", "进制转换", function () {
+  h('<h1>进制转换</h1><div class="desc">2 / 8 / 10 / 16 进制互转 · 支持超大数 · 0x / 0b / 0o 前缀自动识别</div>'
+    + '<div class="row">'
+    + '<select id="src" style="width:110px"><option value="16">16 进制</option><option value="10" selected>10 进制</option><option value="8">8 进制</option><option value="2">2 进制</option></select>'
+    + '<input type="text" id="v" placeholder="如 255 或 0xFF" style="flex:1"></div>'
+    + '<div class="row"><button class="btn" id="go">转换</button></div>'
+    + '<div class="output" id="out"></div>'
+    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
+  q("#go").onclick = function () {
+    var raw = q("#v").value.trim().toLowerCase().replace(/[\s_]/g, "");
+    var radix = +q("#src").value;
+    var m;
+    if ((m = raw.match(/^0x([0-9a-f]+)$/))) { radix = 16; raw = m[1]; }
+    else if ((m = raw.match(/^0b([01]+)$/))) { radix = 2; raw = m[1]; }
+    else if ((m = raw.match(/^0o([0-7]+)$/))) { radix = 8; raw = m[1]; }
+    var ok = true;
+    for (var i = 0; i < raw.length; i++) {
+      var d = parseInt(raw[i], 36);
+      if (isNaN(d) || d >= radix) { ok = false; break; }
+    }
+    if (!raw || !ok) {
+      q("#out").className = "output err";
+      q("#out").innerText = "X 输入不是有效的 " + radix + " 进制数";
+      return;
+    }
+    var n = 0n;
+    var R = BigInt(radix);
+    for (var k = 0; k < raw.length; k++) n = n * R + BigInt(parseInt(raw[k], 36));
+    q("#out").className = "output ok";
+    q("#out").innerText = "10 进制  " + n.toString(10)
+      + "\n16 进制  0x" + n.toString(16).toUpperCase()
+      + "\n8 进制   0o" + n.toString(8)
+      + "\n2 进制   0b" + n.toString(2);
+  };
+  q("#v").onkeydown = function (e) { if (e.key === "Enter") q("#go").click(); };
+  q("#cp").onclick = copyOut;
+}, "进制 二进制 八进制 十进制 十六进制 转换 bin oct dec hex byte");
+
+// 12. 字数统计
+tool("wc", "字数统计", function () {
+  h('<h1>字数统计</h1><div class="desc">实时统计:字符 / 中文字数 / 英文单词 / 行数 / 字节</div>'
+    + '<textarea id="s" placeholder="粘贴或输入文本,自动实时统计"></textarea>'
+    + '<div class="output ok" id="out"></div>');
+  function stat() {
+    var t = q("#s").value;
+    var cjk = (t.match(/[\u4e00-\u9fa5]/g) || []).length;
+    var words = (t.match(/[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*/g) || []).length;
+    var lines = t === "" ? 0 : t.split(/\r\n|\r|\n/).length;
+    var bytes = new TextEncoder().encode(t).length;
+    q("#out").innerText = "总字符数(含空白)   " + t.length
+      + "\n总字符数(不含空白)  " + t.replace(/\s/g, "").length
+      + "\n中文字数      " + cjk
+      + "\n英文单词      " + words
+      + "\n行数        " + lines
+      + "\nUTF-8 字节数   " + bytes;
+  }
+  q("#s").oninput = stat;
+  stat();
+}, "字数 统计 字符 count words 行数 段落 字节 length");
+
+// 13. 大小写/命名转换
+tool("case", "大小写转换", function () {
+  h('<h1>大小写 / 命名转换</h1><div class="desc">大写、小写、驼峰、下划线、中划线等一键转换 · 点击结果复制</div>'
+    + '<textarea id="s" placeholder="hello world / helloWorld / hello_world"></textarea>'
+    + '<div class="row" id="btns"></div>'
+    + '<div class="output" id="out"></div>');
+  function splitWords(s) {
+    return s.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+            .replace(/[_\-.]+/g, " ")
+            .split(/\s+/)
+            .filter(Boolean);
+  }
+  function cap(w) { return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(); }
+  var CASES = [
+    ["全部大写", function (t) { return t.toUpperCase(); }],
+    ["全部小写", function (t) { return t.toLowerCase(); }],
+    ["首字母大写", function (t) { return t ? t.charAt(0).toUpperCase() + t.slice(1) : t; }],
+    ["每词首字母大写", function (t) { return splitWords(t).map(cap).join(" "); }],
+    ["小驼峰 camelCase", function (t) { return splitWords(t).map(function (w, i) { return i ? cap(w) : w.toLowerCase(); }).join(""); }],
+    ["大驼峰 PascalCase", function (t) { return splitWords(t).map(cap).join(""); }],
+    ["下划线 snake_case", function (t) { return splitWords(t).map(function (w) { return w.toLowerCase(); }).join("_"); }],
+    ["中划线 kebab-case", function (t) { return splitWords(t).map(function (w) { return w.toLowerCase(); }).join("-"); }],
+    ["常量 CONST_CASE", function (t) { return splitWords(t).map(function (w) { return w.toUpperCase(); }).join("_"); }]
+  ];
+  CASES.forEach(function (c, i) {
+    var b = document.createElement("button");
+    b.className = "btn ghost";
+    b.textContent = c[0];
+    b.onclick = function () {
+      q("#out").className = "output ok";
+      q("#out").innerText = c[1](q("#s").value);
+    };
+    q("#btns").appendChild(b);
+  });
+  q("#out").onclick = function () { copyText(q("#out").innerText); };
+}, "大小写 转换 驼峰 下划线 中划线 命名 camel snake kebab pascal upper lower");
+
+// 14. 密码生成器
+tool("pwd", "密码生成器", function () {
+  h('<h1>密码生成器</h1><div class="desc">本地随机生成,绝不联网 · 点击密码即可复制</div>'
+    + '<div class="row">'
+    + '<label>长度 <input type="number" id="len" value="16" min="4" max="64" style="width:70px"></label>'
+    + '<label><input type="checkbox" id="c1" checked> 大写 A-Z</label>'
+    + '<label><input type="checkbox" id="c2" checked> 小写 a-z</label>'
+    + '<label><input type="checkbox" id="c3" checked> 数字 0-9</label>'
+    + '<label><input type="checkbox" id="c4" checked> 符号 !@#$%</label>'
+    + '<label><input type="checkbox" id="c5" checked> 排除易混淆 0O1lI</label>'
+    + '<button class="btn" id="g">生成</button></div>'
+    + '<div class="output ok" id="out"></div>');
+  function rndInt(max) {
+    var a = new Uint32Array(1);
+    crypto.getRandomValues(a);
+    return a[0] % max;
+  }
+  q("#g").onclick = function () {
+    var len = Math.min(64, Math.max(4, +q("#len").value || 16));
+    var upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    var lower = "abcdefghijklmnopqrstuvwxyz";
+    var digit = "0123456789";
+    var sym = "!@#$%^&*-_=+?";
+    var pools = [];
+    if (q("#c1").checked) pools.push(upper);
+    if (q("#c2").checked) pools.push(lower);
+    if (q("#c3").checked) pools.push(digit);
+    if (q("#c4").checked) pools.push(sym);
+    if (!pools.length) { toast("请至少勾选一种字符类型"); return; }
+    if (q("#c5").checked) {
+      pools = pools.map(function (p) { return p.replace(/[0O1lI|]/g, ""); }).filter(Boolean);
+    }
+    var all = pools.join("");
+    var result = "";
+    for (var r = 0; r < 3; r++) {
+      var chars = [];
+      pools.forEach(function (p) { chars.push(p[rndInt(p.length)]); });
+      for (var i = chars.length; i < len; i++) chars.push(all[rndInt(all.length)]);
+      for (var j = chars.length - 1; j > 0; j--) {
+        var k = rndInt(j + 1);
+        var tmp = chars[j]; chars[j] = chars[k]; chars[k] = tmp;
+      }
+      result += '<div class="copyline" data-c="' + esc(chars.join("")) + '">' + esc(chars.join("")) + "</div>";
+    }
+    q("#out").innerHTML = result;
+    Array.prototype.forEach.call(q("#out").querySelectorAll(".copyline"), function (el) {
+      el.onclick = function () { copyText(el.getAttribute("data-c")); };
+    });
+  };
+  q("#g").click();
+}, "密码 password 随机 生成 强密码 random strong 安全");
+
+// 15. HTML 实体编解码
+tool("htmlent", "HTML 实体编解码", function () {
+  h('<h1>HTML 实体编解码</h1><div class="desc">& < > 等实体与字符互转 · 非 ASCII 转数字实体</div>'
+    + '<textarea id="s" placeholder="输入 HTML 或含特殊字符的文本"></textarea>'
+    + '<div class="row"><button class="btn" id="enc">编码</button>'
+    + '<button class="btn ghost" id="dec">解码</button></div>'
+    + '<div class="output" id="out"></div>'
+    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
+  q("#enc").onclick = function () {
+    var s = q("#s").value;
+    var out = s.replace(/[&<>"']/g, function (c) {
+      return { "&": "&" + "amp;", "<": "&" + "lt;", ">": "&" + "gt;", '"': "&" + "quot;", "'": "&" + "#39;" }[c];
+    }).replace(/[^\x00-\x7F]/g, function (c) {
+      return "&#x" + c.codePointAt(0).toString(16) + ";";
+    });
+    q("#out").className = "output ok";
+    q("#out").innerText = out;
+  };
+  q("#dec").onclick = function () {
+    var t = document.createElement("textarea");
+    t.innerHTML = q("#s").value;
+    q("#out").className = "output ok";
+    q("#out").innerText = t.value;
+  };
+  q("#cp").onclick = copyOut;
+}, "html entity 实体 转义 编码 解码 escape unescape");
+
+// 16. 单位换算
+tool("unit", "单位换算", function () {
+  h('<h1>单位换算</h1><div class="desc">长度 / 重量 / 数据大小 / 温度 · 输入即显示全部换算结果</div>'
+    + '<div class="row">'
+    + '<select id="cat" style="width:110px"></select>'
+    + '<input type="text" id="v" value="1" style="width:110px">'
+    + '<select id="from" style="flex:1"></select></div>'
+    + '<div class="output ok" id="out"></div>');
+  var CATS = {
+    len: { name: "长度", u: [["纳米 nm", 1e-9], ["微米 um", 1e-6], ["毫米 mm", 0.001], ["厘米 cm", 0.01], ["米 m", 1], ["千米 km", 1000], ["英寸 in", 0.0254], ["英尺 ft", 0.3048], ["英里 mi", 1609.344]] },
+    wt: { name: "重量", u: [["毫克 mg", 0.001], ["克 g", 1], ["千克 kg", 1000], ["吨 t", 1e6], ["斤", 500], ["两", 50], ["磅 lb", 453.59237], ["盎司 oz", 28.349523125]] },
+    data: { name: "数据大小", u: [["B", 1], ["KB", 1024], ["MB", 1048576], ["GB", 1073741824], ["TB", 1099511627776], ["PB", 1125899906842624]] },
+    temp: { name: "温度", special: true, u: [["摄氏度 °C"], ["华氏度 °F"], ["开尔文 K"]] }
+  };
+  function fmtN(x) {
+    if (!isFinite(x)) return "-";
+    if (x !== 0 && (Math.abs(x) >= 1e15 || Math.abs(x) < 1e-9)) return x.toExponential(6);
+    return String(+x.toPrecision(12));
+  }
+  function fill(sel, items) {
+    sel.innerHTML = "";
+    items.forEach(function (it, i) {
+      var o = document.createElement("option");
+      o.value = String(i);
+      o.textContent = it[0];
+      sel.appendChild(o);
+    });
+  }
+  function calc() {
+    var cat = CATS[q("#cat").value];
+    var v = parseFloat(q("#v").value);
+    if (isNaN(v)) { q("#out").innerText = "请输入数字"; return; }
+    var from = +q("#from").value;
+    var lines = [];
+    if (cat.special) {
+      var c; // 先转为摄氏
+      if (from === 0) c = v;
+      else if (from === 1) c = (v - 32) * 5 / 9;
+      else c = v - 273.15;
+      var vals = [c, c * 9 / 5 + 32, c + 273.15];
+      cat.u.forEach(function (u, i) { lines.push(u[0] + " = " + fmtN(vals[i])); });
+    } else {
+      var base = v * cat.u[from][1];
+      cat.u.forEach(function (u) { lines.push(u[0] + " = " + fmtN(base / u[1])); });
+    }
+    q("#out").innerText = lines.join("\n");
+  }
+  fill(q("#cat"), Object.keys(CATS).map(function (k) { return [CATS[k].name, k]; }));
+  function rebuild() {
+    fill(q("#from"), CATS[q("#cat").value].u);
+    calc();
+  }
+  q("#cat").onchange = rebuild;
+  q("#from").onchange = calc;
+  q("#v").oninput = calc;
+  rebuild();
+}, "单位 换算 长度 重量 温度 数据大小 斤 磅 米 英尺 unit convert");
+
+// 17. 计算器
+tool("calc", "计算器", function () {
+  h('<h1>计算器</h1><div class="desc">支持 + - * / % ( ) 和幂运算 ^ · 回车计算</div>'
+    + '<input type="text" id="s" placeholder="如 (1+2)*3^2 或 10/4">'
+    + '<div class="row"><button class="btn" id="go">计算</button></div>'
+    + '<div class="output" id="out"></div>'
+    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
+  q("#go").onclick = function () {
+    var expr = q("#s").value
+      .replace(/[×✕]/g, "*").replace(/[÷]/g, "/")
+      .replace(/,/g, "").replace(/\^/g, "**");
+
+    if (!expr.trim()) return;
+    if (!/^[\d+\-*/().%\s]+$/.test(expr)) {
+      q("#out").className = "output err";
+      q("#out").innerText = "X 只支持数字和 + - * / % ( ) ^ 运算符";
+      return;
+    }
+    try {
+      var v = Function('"use strict";return (' + expr + ")")();
+      if (typeof v !== "number" || !isFinite(v)) {
+        q("#out").className = "output err";
+        q("#out").innerText = "X 结果无效(如除以 0)";
+        return;
+      }
+      v = Math.round(v * 1e10) / 1e10;
+      q("#out").className = "output ok";
+      q("#out").innerText = "= " + v;
+    } catch (e) {
+      q("#out").className = "output err";
+      q("#out").innerText = "X 表达式语法错误";
+    }
+  };
+  q("#s").onkeydown = function (e) { if (e.key === "Enter") q("#go").click(); };
+  q("#cp").onclick = copyOut;
+}, "计算器 表达式 求值 calculator 算式 加减乘除");
+
+// 18. 日期计算
+tool("datecalc", "日期计算", function () {
+  h('<h1>日期计算</h1><div class="desc">日期相差天数 / 日期加减</div>'
+    + '<label>① 两个日期相差多少天</label>'
+    + '<div class="row"><input type="date" id="d1" style="flex:1"> <span class="desc" style="margin:0">→</span> <input type="date" id="d2" style="flex:1">'
+    + '<button class="btn" id="b1">计算</button></div>'
+    + '<div class="output" id="out1"></div>'
+    + '<label>② 日期加减 N 天/周/月</label>'
+    + '<div class="row"><input type="date" id="d3" style="flex:1">'
+    + '<input type="text" id="n" value="30" style="width:80px">'
+    + '<select id="unit2" style="width:90px"><option value="d">天</option><option value="w">周</option><option value="m">月</option></select>'
+    + '<button class="btn" id="b2">计算</button></div>'
+    + '<div class="output" id="out2"></div>');
+  function fmt(d) {
+    return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()) + "(周" + "日一二三四五六"[d.getDay()] + ")";
+  }
+  var today = new Date();
+  var iso = today.getFullYear() + "-" + p2(today.getMonth() + 1) + "-" + p2(today.getDate());
+  q("#d1").value = iso;
+  q("#d2").value = iso;
+  q("#d3").value = iso;
+  q("#b1").onclick = function () {
+    var a = new Date(q("#d1").value + "T00:00:00");
+    var b = new Date(q("#d2").value + "T00:00:00");
+    if (isNaN(a) || isNaN(b)) { q("#out1").className = "output err"; q("#out1").innerText = "X 请选择日期"; return; }
+    var days = Math.round((b - a) / 86400000);
+    q("#out1").className = "output ok";
+    q("#out1").innerText = "相差 " + Math.abs(days) + " 天"
+      + "\n约 " + Math.floor(Math.abs(days) / 7) + " 周 " + (Math.abs(days) % 7) + " 天"
+      + "\n起  " + fmt(a) + "\n止  " + fmt(b);
+  };
+  q("#b2").onclick = function () {
+    var d = new Date(q("#d3").value + "T00:00:00");
+    var n = parseInt(q("#n").value, 10);
+    if (isNaN(d) || isNaN(n)) { q("#out2").className = "output err"; q("#out2").innerText = "X 请选择日期并输入数字"; return; }
+    var u = q("#unit2").value;
+    if (u === "d") d.setDate(d.getDate() + n);
+    else if (u === "w") d.setDate(d.getDate() + n * 7);
+    else d.setMonth(d.getMonth() + n);
+    q("#out2").className = "output ok";
+    q("#out2").innerText = "结果日期  " + fmt(d);
+  };
+  q("#b1").click();
+  q("#b2").click();
+}, "日期 计算 天数 相差 加减 倒计时 date days");
+
+// 19. IP 归属地查询(联网)
+tool("ip", "IP 归属地查询", function () {
+  h('<h1>IP 归属地查询</h1>'
+    + '<div class="net-tip">🌐 此工具需要联网:调用第三方接口(ipapi.co / ip.sb)查询,仅传输 IP 信息,不涉及你的其他数据</div>'
+    + '<div class="row"><input type="text" id="ip" placeholder="留空查询本机公网 IP,或输入任意 IP" style="flex:1">'
+    + '<button class="btn" id="go">查询</button></div>'
+    + '<div class="output" id="out">点击「查询」查看本机公网 IP</div>');
+  function normA(j) {
+    if (j.error) throw new Error(j.reason || "接口返回错误");
+    return { ip: j.ip, country: (j.country_name || j.country || "") + (j.country_code ? " (" + j.country_code + ")" : ""),
+      region: j.region || "", city: j.city || "", org: j.org || j.organization || j.asn || "",
+      tz: j.timezone || "", ll: (j.latitude != null && j.longitude != null) ? j.latitude + ", " + j.longitude : "", src: "ipapi.co" };
+  }
+  function normB(j) {
+    return { ip: j.ip, country: (j.country || "") + (j.country_code ? " (" + j.country_code + ")" : ""),
+      region: j.region || "", city: j.city || "", org: j.organization || j.isp || j.asn || "",
+      tz: j.timezone || "", ll: (j.latitude != null && j.longitude != null) ? j.latitude + ", " + j.longitude : "", src: "api.ip.sb" };
+  }
+  function show(o) {
+    q("#out").className = "output ok";
+    q("#out").innerText = "IP       " + o.ip
+      + "\n国家/地区  " + (o.country || "-")
+      + "\n省份/城市  " + ((o.region + " " + o.city).trim() || "-")
+      + "\n运营商/组织 " + (o.org || "-")
+      + "\n时区      " + (o.tz || "-")
+      + "\n经纬度     " + (o.ll || "-")
+      + "\n数据来源   " + o.src;
+  }
+  q("#go").onclick = function () {
+    var v = q("#ip").value.trim();
+    var url = v ? "https://ipapi.co/" + encodeURIComponent(v) + "/json/" : "https://ipapi.co/json/";
+    q("#out").className = "output";
+    q("#out").innerText = "查询中…(需要联网)";
+    fetch(url).then(function (r) { return r.json(); }).then(normA).then(show)
+      .catch(function () {
+        if (v) {
+          q("#out").className = "output err";
+          q("#out").innerText = "X 查询失败(可能无网络、IP 无效或接口限流)";
+          return;
+        }
+        fetch("https://api.ip.sb/geoip").then(function (r2) { return r2.json(); })
+          .then(normB).then(show)
+          .catch(function () {
+            q("#out").className = "output err";
+            q("#out").innerText = "X 查询失败:请检查网络连接";
+          });
+      });
+  };
+}, "ip 归属地 公网 地址 位置 查询 network internet");
+
+// 20. 二维码生成(联网)
+tool("qr", "二维码生成", function () {
+  h('<h1>二维码生成</h1>'
+    + '<div class="net-tip">🌐 此工具需要联网:二维码图片由第三方服务 api.qrserver.com 生成,输入内容会发送到该服务,敏感信息请勿输入</div>'
+    + '<textarea id="s" placeholder="输入网址或文本,如 https://owntools.cn" style="min-height:80px"></textarea>'
+    + '<div class="row">'
+    + '<select id="size" style="width:110px"><option value="150">150 x 150</option><option value="220" selected>220 x 220</option><option value="300">300 x 300</option><option value="500">500 x 500</option></select>'
+    + '<button class="btn" id="go">生成二维码</button>'
+    + '<a id="dl" class="btn ghost" href="#" target="_blank" rel="noopener" style="display:none;text-decoration:none">打开大图</a></div>'
+    + '<div class="qr-box" id="box"><span class="desc">生成后图片显示在这里</span></div>');
+  q("#go").onclick = function () {
+    var text = q("#s").value.trim();
+    if (!text) { toast("请先输入内容"); return; }
+    var s = q("#size").value;
+    var url = "https://api.qrserver.com/v1/create-qr-code/?size=" + s + "x" + s + "&margin=8&data=" + encodeURIComponent(text);
+    q("#box").innerHTML = '<span class="desc">生成中…(需要联网)</span>';
+    var img = new Image();
+    img.onload = function () {
+      q("#box").innerHTML = "";
+      q("#box").appendChild(img);
+      q("#dl").style.display = "inline-block";
+      q("#dl").href = url;
+    };
+    img.onerror = function () {
+      q("#box").innerHTML = '<span class="desc" style="color:var(--err)">X 生成失败:请检查网络连接</span>';
+    };
+    img.src = url;
+    img.alt = "二维码";
+  };
+}, "二维码 qrcode 生成 扫码 跳转 分享");
+
+// ---- Boot:左右双栏导航 + 图标 + 搜索 ----
+var ICONS = {
+  json: "{}", ts: "⏱", b64: "64", url: "%", uuid: "ID", jwt: "J", re: ".*", diff: "±", hash: "#", color: "◐",
+  radix: "0x", wc: "文", case: "Aa", pwd: "***", htmlent: "&", unit: "⇄", calc: "=", datecalc: "📅", ip: "IP", qr: "▩"
+};
+var navL = document.getElementById("nav");
+var navR = document.getElementById("nav2") || navL;
 var navBtns = [];
-TOOLS.forEach(function (t) {
+TOOLS.forEach(function (t, i) {
   var b = document.createElement("button");
   b.innerHTML = '<span class="ico">' + ICONS[t.id] + "</span>" + esc(t.name);
+  b.dataset.kw = (t.id + " " + t.name + " " + t.kw).toLowerCase();
   b.onclick = function () { openTool(t.id); };
-  nav.appendChild(b);
+  (i < 10 ? navL : navR).appendChild(b);
   navBtns.push(b);
 });
+
+// ---- 搜索:过滤左右两栏菜单,回车打开第一个匹配 ----
+var si = document.getElementById("search");
+if (si) {
+  si.oninput = function () {
+    var v = si.value.trim().toLowerCase();
+    navBtns.forEach(function (b) {
+      b.style.display = (!v || b.dataset.kw.indexOf(v) >= 0) ? "" : "none";
+    });
+  };
+  si.onkeydown = function (e) {
+    if (e.key !== "Enter") return;
+    var v = si.value.trim().toLowerCase();
+    for (var i = 0; i < TOOLS.length; i++) {
+      if (!v || navBtns[i].dataset.kw.indexOf(v) >= 0) { openTool(TOOLS[i].id); break; }
+    }
+  };
+}
 
 // ---- 工具切换 + hash 路由(链接可收藏,如 #jwt 直达 JWT 解码) ----
 var currentId = null;

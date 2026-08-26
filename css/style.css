@@ -318,3 +318,33 @@ input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent);
   .topright-note { display: none; }
   main { padding: 16px 16px 40px; overflow: visible; }
 }
+
+/* ===== 双栏导航 / 新增工具样式 ===== */
+.sidebar.right {
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+.side-label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #64748b;
+  padding: 14px 16px 6px;
+  font-weight: 700;
+}
+.qr-box {
+  background: #fff;
+  padding: 12px;
+  border-radius: 10px;
+  display: inline-block;
+  margin-top: 8px;
+}
+.qr-box canvas { display: block; }
+.net-tip {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 8px;
+  line-height: 1.6;
+}
+@media (max-width: 1100px) {
+  .sidebar.right { display: none; }
+}
