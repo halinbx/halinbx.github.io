@@ -13,9 +13,36 @@ function esc(s) {
     return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c];
   });
 }
-function copyOut() {
-  var txt = document.getElementById("out").innerText;
-  navigator.clipboard.writeText(txt);
+function copyText(txt, btn) {
+  function fallback() {
+    var ta = document.createElement("textarea");
+    ta.value = txt;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+  function done(ok) {
+    if (!btn) return;
+    var old = btn.textContent;
+    btn.textContent = ok ? "✓ 已复制" : "复制失败";
+    setTimeout(function () { btn.textContent = old; }, 1200);
+  }
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(txt)
+      .then(function () { done(true); },
+            function () { fallback(); done(true); });
+  } else {
+    fallback();
+    done(true);
+  }
+}
+function copyOut(ev, id) {
+  var el = document.getElementById(id || "out");
+  var btn = ev && ev.target ? ev.target : null;
+  copyText(el ? el.innerText : "", btn);
 }
 
 // 1. JSON
@@ -52,10 +79,12 @@ tool("ts", "时间戳转换", function () {
     + '<input type="text" id="t" placeholder="1724400000">'
     + '<div class="row"><button class="btn" id="c1">转日期</button></div>'
     + '<div class="output" id="out"></div>'
+    + '<div class="row"><button class="btn ghost" id="cp1">复制结果</button></div>'
     + '<label>日期字符串</label>'
     + '<input type="text" id="d" placeholder="2026-08-23 15:30:00">'
     + '<div class="row"><button class="btn" id="c2">转时间戳</button></div>'
-    + '<div class="output" id="out2"></div>');
+    + '<div class="output" id="out2"></div>'
+    + '<div class="row"><button class="btn ghost" id="cp2">复制结果</button></div>');
   function fmt(d) {
     return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate())
       + " " + p2(d.getHours()) + ":" + p2(d.getMinutes()) + ":" + p2(d.getSeconds());
@@ -84,6 +113,8 @@ tool("ts", "时间戳转换", function () {
     q("#out2").className = "output ok";
     q("#out2").innerText = "秒 " + Math.floor(d.getTime() / 1000) + "\n毫秒 " + d.getTime();
   };
+  q("#cp1").onclick = function (ev) { copyOut(ev); };
+  q("#cp2").onclick = function (ev) { copyOut(ev, "out2"); };
 });
 
 // 3. Base64
@@ -167,7 +198,8 @@ tool("pwd", "随机密码生成", function () {
     + '<label><input type="checkbox" id="num" checked> 数字</label>'
     + '<label><input type="checkbox" id="sym" checked> 符号</label>'
     + '<button class="btn" id="g">生成</button></div>'
-    + '<div class="output" id="out"></div>');
+    + '<div class="output" id="out"></div>'
+    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
   q("#g").onclick = function () {
     var pool = "";
     if (q("#u").checked) pool += "ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -189,6 +221,7 @@ tool("pwd", "随机密码生成", function () {
     q("#out").className = "output ok";
     q("#out").innerText = pwd + "\n\n熵约 " + bits + " bits - " + lv;
   };
+  q("#cp").onclick = copyOut;
 });
 
 // 7. Regex
@@ -199,7 +232,8 @@ tool("re", "正则表达式测试", function () {
     + '<label><input type="checkbox" id="gl" checked> 全局</label>'
     + '<label><input type="checkbox" id="mu"> 多行</label></div>'
     + '<textarea id="s">订单A100、订单B233、订单C99</textarea>'
-    + '<div class="output" id="out"></div>');
+    + '<div class="output" id="out"></div>'
+    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
   function run() {
     var flags = (q("#ig").checked ? "i" : "") + (q("#gl").checked ? "g" : "") + (q("#mu").checked ? "m" : "");
     var re;
@@ -234,6 +268,7 @@ tool("re", "正则表达式测试", function () {
     q("#" + id).oninput = run;
     q("#" + id).onchange = run;
   });
+  q("#cp").onclick = copyOut;
   run();
 });
 
@@ -244,7 +279,8 @@ tool("diff", "文本对比", function () {
     + '<textarea id="a" style="min-height:180px" placeholder="原文本"></textarea>'
     + '<textarea id="b" style="min-height:180px" placeholder="新文本"></textarea></div>'
     + '<div class="row"><button class="btn" id="d">对比</button></div>'
-    + '<div class="output" id="out"></div>');
+    + '<div class="output" id="out"></div>'
+    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
   q("#d").onclick = function () {
     var A = q("#a").value.split("\n"), B = q("#b").value.split("\n");
     var n = A.length, m = B.length;
@@ -271,6 +307,7 @@ tool("diff", "文本对比", function () {
     q("#out").className = "output ok";
     q("#out").innerText = "+" + adds + " 行新增  -" + dels + " 行删除\n\n" + shown.join("\n");
   };
+  q("#cp").onclick = copyOut;
 });
 
 // 9. Hash
@@ -278,7 +315,8 @@ tool("hash", "哈希计算", function () {
   h('<h1>哈希计算</h1><div class="desc">SHA-1 / SHA-256 / SHA-512（Web Crypto）</div>'
     + '<textarea id="s" placeholder="输入文本"></textarea>'
     + '<div class="row"><button class="btn" id="go">计算</button></div>'
-    + '<div class="output" id="out"></div>');
+    + '<div class="output" id="out"></div>'
+    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
   q("#go").onclick = async function () {
     var data = new TextEncoder().encode(q("#s").value);
     var res = [];
@@ -293,6 +331,7 @@ tool("hash", "哈希计算", function () {
     q("#out").className = "output ok";
     q("#out").innerText = res.join("\n");
   };
+  q("#cp").onclick = copyOut;
 });
 
 // 10. Color
@@ -302,7 +341,8 @@ tool("color", "颜色转换", function () {
     + '<input type="text" id="hex" value="#38bdf8" style="width:140px">'
     + '<button class="btn" id="go">转换</button></div>'
     + '<div class="swatch" id="sw" style="margin-top:10px;background:#38bdf8"></div>'
-    + '<div class="output" id="out"></div>');
+    + '<div class="output" id="out"></div>'
+    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
   function rgb2hsl(r, g, b) {
     r /= 255; g /= 255; b /= 255;
     var mx = Math.max(r, g, b), mn = Math.min(r, g, b);
@@ -338,6 +378,7 @@ tool("color", "颜色转换", function () {
   }
   q("#pick").oninput = function () { q("#hex").value = q("#pick").value; conv(); };
   q("#go").onclick = conv;
+  q("#cp").onclick = copyOut;
   conv();
 });
 
