@@ -45,6 +45,148 @@ function copyOut(ev, id) {
   copyText(el ? el.innerText : "", btn);
 }
 
+// ---- 纯 JS 哈希实现（不依赖 Web Crypto，http 环境也可用） ----
+var ROTL32 = function (x, n) { return ((x << n) | (x >>> (32 - n))) >>> 0; };
+var ROTR32 = function (x, n) { return ((x >>> n) | (x << (32 - n))) >>> 0; };
+var HEX8 = function (x) { return ("00000000" + (x >>> 0).toString(16)).slice(-8); };
+function pad64B(msg) {
+  var l = msg.length;
+  var blocks = Math.ceil((l + 9) / 64);
+  var total = blocks * 64;
+  var m = new Uint8Array(total);
+  m.set(msg);
+  m[l] = 0x80;
+  var dv = new DataView(m.buffer);
+  dv.setUint32(total - 8, Math.floor(l / 536870912));
+  dv.setUint32(total - 4, (l * 8) >>> 0);
+  return { dv: dv, blocks: blocks };
+}
+function sha1(msg) {
+  var p = pad64B(msg);
+  var h = [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0];
+  var w = new Uint32Array(80);
+  for (var i = 0; i < p.blocks; i++) {
+    for (var j = 0; j < 16; j++) w[j] = p.dv.getUint32(i * 64 + j * 4);
+    for (var j2 = 16; j2 < 80; j2++) w[j2] = ROTL32(w[j2 - 3] ^ w[j2 - 8] ^ w[j2 - 14] ^ w[j2 - 16], 1);
+    var a = h[0], b = h[1], c = h[2], d = h[3], e = h[4];
+    for (var j3 = 0; j3 < 80; j3++) {
+      var f, k;
+      if (j3 < 20) { f = (b & c) | (~b & d); k = 0x5A827999; }
+      else if (j3 < 40) { f = b ^ c ^ d; k = 0x6ED9EBA1; }
+      else if (j3 < 60) { f = (b & c) | (b & d) | (c & d); k = 0x8F1BBCDC; }
+      else { f = b ^ c ^ d; k = 0xCA62C1D6; }
+      var t = (ROTL32(a, 5) + f + e + k + w[j3]) >>> 0;
+      e = d; d = c; c = ROTL32(b, 30); b = a; a = t;
+    }
+    h[0] = (h[0] + a) >>> 0; h[1] = (h[1] + b) >>> 0; h[2] = (h[2] + c) >>> 0; h[3] = (h[3] + d) >>> 0; h[4] = (h[4] + e) >>> 0;
+  }
+  return h.map(HEX8).join("");
+}
+function sha256(msg) {
+  var K = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+  var p = pad64B(msg);
+  var H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  var w = new Uint32Array(64);
+  for (var i = 0; i < p.blocks; i++) {
+    for (var j = 0; j < 16; j++) w[j] = p.dv.getUint32(i * 64 + j * 4);
+    for (var j2 = 16; j2 < 64; j2++) {
+      var s0 = ROTR32(w[j2 - 15], 7) ^ ROTR32(w[j2 - 15], 18) ^ (w[j2 - 15] >>> 3);
+      var s1 = ROTR32(w[j2 - 2], 17) ^ ROTR32(w[j2 - 2], 19) ^ (w[j2 - 2] >>> 10);
+      w[j2] = (w[j2 - 16] + s0 + w[j2 - 7] + s1) >>> 0;
+    }
+    var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], hh = H[7];
+    for (var j3 = 0; j3 < 64; j3++) {
+      var S1 = ROTR32(e, 6) ^ ROTR32(e, 11) ^ ROTR32(e, 25);
+      var ch = (e & f) ^ (~e & g);
+      var t1 = (hh + S1 + ch + K[j3] + w[j3]) >>> 0;
+      var S0 = ROTR32(a, 2) ^ ROTR32(a, 13) ^ ROTR32(a, 22);
+      var maj = (a & b) ^ (a & c) ^ (b & c);
+      var t2 = (S0 + maj) >>> 0;
+      hh = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+    }
+    H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;
+    H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + hh) >>> 0;
+  }
+  return H.map(HEX8).join("");
+}
+var M64 = (1n << 64n) - 1n;
+function rotr64(x, n) { return ((x >> n) | (x << (64n - n))) & M64; }
+function pad128(msg) {
+  var l = msg.length;
+  var blocks = Math.ceil((l + 17) / 128);
+  var total = blocks * 128;
+  var m = new Uint8Array(total);
+  m.set(msg);
+  m[l] = 0x80;
+  var dv = new DataView(m.buffer);
+  var bits = l * 8;
+  dv.setUint32(total - 8, Math.floor(bits / 4294967296));
+  dv.setUint32(total - 4, bits >>> 0);
+  return { dv: dv, blocks: blocks };
+}
+function sha512(msg) {
+  var K = [
+    0x428a2f98d728ae22n, 0x7137449123ef65cdn, 0xb5c0fbcfec4d3b2fn, 0xe9b5dba58189dbbcn,
+    0x3956c25bf348b538n, 0x59f111f1b605d019n, 0x923f82a4af194f9bn, 0xab1c5ed5da6d8118n,
+    0xd807aa98a3030242n, 0x12835b0145706fben, 0x243185be4ee4b28cn, 0x550c7dc3d5ffb4e2n,
+    0x72be5d74f27b896fn, 0x80deb1fe3b1696b1n, 0x9bdc06a725c71235n, 0xc19bf174cf692694n,
+    0xe49b69c19ef14ad2n, 0xefbe4786384f25e3n, 0x0fc19dc68b8cd5b5n, 0x240ca1cc77ac9c65n,
+    0x2de92c6f592b0275n, 0x4a7484aa6ea6e483n, 0x5cb0a9dcbd41fbd4n, 0x76f988da831153b5n,
+    0x983e5152ee66dfabn, 0xa831c66d2db43210n, 0xb00327c898fb213fn, 0xbf597fc7beef0ee4n,
+    0xc6e00bf33da88fc2n, 0xd5a79147930aa725n, 0x06ca6351e003826fn, 0x142929670a0e6e70n,
+    0x27b70a8546d22ffcn, 0x2e1b21385c26c926n, 0x4d2c6dfc5ac42aedn, 0x53380d139d95b3dfn,
+    0x650a73548baf63den, 0x766a0abb3c77b2a8n, 0x81c2c92e47edaee6n, 0x92722c851482353bn,
+    0xa2bfe8a14cf10364n, 0xa81a664bbc423001n, 0xc24b8b70d0f89791n, 0xc76c51a30654be30n,
+    0xd192e819d6ef5218n, 0xd69906245565a910n, 0xf40e35855771202an, 0x106aa07032bbd1b8n,
+    0x19a4c116b8d2d0c8n, 0x1e376c085141ab53n, 0x2748774cdf8eeb99n, 0x34b0bcb5e19b48a8n,
+    0x391c0cb3c5c95a63n, 0x4ed8aa4ae3418acbn, 0x5b9cca4f7763e373n, 0x682e6ff3d6b2b8a3n,
+    0x748f82ee5defb2fcn, 0x78a5636f43172f60n, 0x84c87814a1f0ab72n, 0x8cc702081a6439ecn,
+    0x90befffa23631e28n, 0xa4506cebde82bde9n, 0xbef9a3f7b2c67915n, 0xc67178f2e372532bn,
+    0xca273eceea26619cn, 0xd186b8c721c0c207n, 0xeada7dd6cde0eb1en, 0xf57d4f7fee6ed178n,
+    0x06f067aa72176fban, 0x0a637dc5a2c898a6n, 0x113f9804bef90daen, 0x1b710b35131c471bn,
+    0x28db77f523047d84n, 0x32caab7b40c72493n, 0x3c9ebe0a15c9bebcn, 0x431d67c49c100d4cn,
+    0x4cc5d4becb3e42b6n, 0x597f299cfc657e2an, 0x5fcb6fab3ad6faecn, 0x6c44198c4a475817n];
+  var p = pad128(msg);
+  var H = [
+    0x6a09e667f3bcc908n, 0xbb67ae8584caa73bn, 0x3c6ef372fe94f82bn, 0xa54ff53a5f1d36f1n,
+    0x510e527fade682d1n, 0x9b05688c2b3e6c1fn, 0x1f83d9abfb41bd6bn, 0x5be0cd19137e2179n];
+  var w = new Array(80);
+  for (var i = 0; i < p.blocks; i++) {
+    for (var j = 0; j < 16; j++) {
+      var off = i * 128 + j * 8;
+      w[j] = 0n;
+      for (var b = 0; b < 8; b++) w[j] = (w[j] << 8n) | BigInt(p.dv.getUint8(off + b));
+    }
+    for (var j2 = 16; j2 < 80; j2++) {
+      var s0 = rotr64(w[j2 - 15], 1n) ^ rotr64(w[j2 - 15], 8n) ^ (w[j2 - 15] >> 7n);
+      var s1 = rotr64(w[j2 - 2], 19n) ^ rotr64(w[j2 - 2], 61n) ^ (w[j2 - 2] >> 6n);
+      w[j2] = (w[j2 - 16] + s0 + w[j2 - 7] + s1) & M64;
+    }
+    var a = H[0], b2 = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], hh = H[7];
+    for (var j3 = 0; j3 < 80; j3++) {
+      var S1 = rotr64(e, 14n) ^ rotr64(e, 18n) ^ rotr64(e, 41n);
+      var ch = (e & f) ^ (~e & g);
+      var t1 = hh + S1 + ch + K[j3] + w[j3];
+      var S0 = rotr64(a, 28n) ^ rotr64(a, 34n) ^ rotr64(a, 39n);
+      var maj = (a & b2) ^ (a & c) ^ (b2 & c);
+      var t2 = S0 + maj;
+      hh = g; g = f; f = e; e = (d + t1) & M64;
+      d = c; c = b2; b2 = a; a = (t1 + t2) & M64;
+    }
+    H[0] = (H[0] + a) & M64; H[1] = (H[1] + b2) & M64; H[2] = (H[2] + c) & M64; H[3] = (H[3] + d) & M64;
+    H[4] = (H[4] + e) & M64; H[5] = (H[5] + f) & M64; H[6] = (H[6] + g) & M64; H[7] = (H[7] + hh) & M64;
+  }
+  return H.map(function (x) { return x.toString(16).padStart(16, "0"); }).join("");
+}
+
 // 1. JSON
 tool("json", "JSON 格式化", function () {
   h('<h1>JSON 格式化 / 校验</h1><div class="desc">粘贴 JSON，支持格式化、压缩、转义</div>'
@@ -191,16 +333,56 @@ tool("uuid", "UUID 生成器", function () {
 
 // 6. Password
 tool("pwd", "随机密码生成", function () {
-  h('<h1>随机密码生成</h1><div class="desc">本地随机，强度预估</div>'
-    + '<div class="row"><label>长度 <input type="text" id="len" value="16" style="width:70px"></label>'
+  h('<h1>随机密码生成</h1><div class="desc">本地随机，三种模式，4 位分组显示更易读</div>'
+    + '<div class="row"><label>模式 <select id="mode">'
+    + '<option value="rand">随机字符</option>'
+    + '<option value="mem">易记音节</option>'
+    + '<option value="pin">PIN 码</option></select></label>'
+    + '<label>长度 <input type="text" id="len" value="16" style="width:70px"></label>'
+    + '<span id="opts" style="display:contents">'
     + '<label><input type="checkbox" id="u" checked> 大写</label>'
     + '<label><input type="checkbox" id="lo" checked> 小写</label>'
     + '<label><input type="checkbox" id="num" checked> 数字</label>'
-    + '<label><input type="checkbox" id="sym" checked> 符号</label>'
+    + '<label><input type="checkbox" id="sym" checked> 符号</label></span>'
     + '<button class="btn" id="g">生成</button></div>'
-    + '<div class="output" id="out"></div>'
-    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
+    + '<div class="output" id="out" style="font-size:15px"></div>'
+    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button>'
+    + '<span class="desc" style="margin:0">复制的是不带空格的原始密码</span></div>');
+  var CON = "bcdfghjklmnpqrstvwxz", VOW = "aeiou", DIG = "0123456789";
+  var last = "";
+  function level(bits) { return bits < 50 ? "弱" : bits < 80 ? "中等" : bits < 120 ? "强" : "极强"; }
+  function show(pwd, bits, note) {
+    last = pwd;
+    q("#out").className = "output ok";
+    q("#out").innerText = pwd.replace(/(.{4})(?=.)/g, "$1 ")
+      + "\n\n熵约 " + Math.round(bits) + " bits - " + level(bits) + (note ? "\n" + note : "");
+  }
+  q("#mode").onchange = function () {
+    var m = q("#mode").value;
+    q("#opts").style.display = m === "rand" ? "contents" : "none";
+    q("#len").value = m === "pin" ? "6" : m === "mem" ? "9" : "16";
+  };
   q("#g").onclick = function () {
+    var mode = q("#mode").value;
+    var len = Math.min(64, Math.max(4, +q("#len").value || 16));
+    var arr = new Uint32Array(len + 2);
+    crypto.getRandomValues(arr);
+    var i, pwd = "";
+    if (mode === "pin") {
+      len = Math.min(12, Math.max(4, len));
+      for (i = 0; i < len; i++) pwd += DIG[arr[i] % 10];
+      show(pwd, len * Math.log2(10), "");
+      return;
+    }
+    if (mode === "mem") {
+      len = Math.min(21, Math.max(6, len));
+      var n = Math.floor(len / 3);
+      for (i = 0; i < n; i++) pwd += CON[arr[i] % CON.length] + VOW[arr[i + 1] % VOW.length];
+      pwd += DIG[arr[0] % 10] + DIG[arr[n] % 10];
+      pwd = pwd[0].toUpperCase() + pwd.slice(1);
+      show(pwd, n * Math.log2(CON.length * VOW.length) + 2 * Math.log2(10), "音节+数字结构，便于记忆");
+      return;
+    }
     var pool = "";
     if (q("#u").checked) pool += "ABCDEFGHJKLMNPQRSTUVWXYZ";
     if (q("#lo").checked) pool += "abcdefghijkmnopqrstuvwxyz";
@@ -211,26 +393,33 @@ tool("pwd", "随机密码生成", function () {
       q("#out").innerText = "X 至少选择一种字符集";
       return;
     }
-    var len = Math.min(64, Math.max(6, +q("#len").value || 16));
-    var arr = new Uint32Array(len);
-    crypto.getRandomValues(arr);
-    var pwd = "";
-    for (var i = 0; i < len; i++) pwd += pool[arr[i] % pool.length];
-    var bits = Math.round(len * Math.log2(pool.length));
-    var lv = bits < 50 ? "弱" : bits < 80 ? "中等" : bits < 120 ? "强" : "极强";
-    var tip = "";
-    if (!q("#u").checked && !q("#lo").checked) {
-      tip = "\n\n⚠ 提示:当前未勾选大写/小写字母,密码仅由数字和符号组成(看起来像乱码属正常)。需要常规密码请勾选字母选项。";
-    }
-    q("#out").className = "output ok";
-    q("#out").innerText = pwd + "\n\n熵约 " + bits + " bits - " + lv + tip;
+    len = Math.min(64, Math.max(6, len));
+    for (i = 0; i < len; i++) pwd += pool[arr[i] % pool.length];
+    var tip = (!q("#u").checked && !q("#lo").checked) ? "⚠ 当前仅数字/符号组成，如需常规密码请勾选字母" : "";
+    show(pwd, len * Math.log2(pool.length), tip);
   };
-  q("#cp").onclick = copyOut;
+  q("#cp").onclick = function (ev) { copyText(last, ev.target); };
+  q("#g").click();
 });
 
 // 7. Regex
+var RE_LIB = [
+  ["手机号", "1[3-9]\\d{9}", "13812345678"],
+  ["邮箱", "[\\w.+-]+@[\\w-]+\\.[\\w.]+", "hi@example.com"],
+  ["URL", "https?://[^\\s]+", "https://example.com/path"],
+  ["IPv4 地址", "(\\d{1,3}\\.){3}\\d{1,3}", "192.168.1.100"],
+  ["日期 yyyy-MM-dd", "\\d{4}-\\d{2}-\\d{2}", "2026-08-26"],
+  ["时间 HH:mm:ss", "\\d{2}:\\d{2}:\\d{2}", "12:30:59"],
+  ["身份证(18位)", "\\d{17}[\\dXx]", "110101199003077758"],
+  ["中文字符", "[\\u4e00-\\u9fa5]+", "Hello 你好"],
+  ["QQ 号", "[1-9]\\d{4,10}", "123456789"],
+  ["十六进制颜色", "#[0-9a-fA-F]{6}", "#38bdf8"]
+];
 tool("re", "正则表达式测试", function () {
-  h('<h1>正则表达式测试</h1><div class="desc">实时高亮匹配结果</div>'
+  h('<h1>正则表达式测试</h1><div class="desc">实时高亮，内置常用正则库，可从示例生成</div>'
+    + '<div class="row"><label>常用 <select id="lib" style="width:150px"><option value="">选择…</option></select></label>'
+    + '<button class="btn ghost" id="gen">从示例生成正则</button>'
+    + '<span class="desc" style="margin:0">文本框每行放一个示例</span></div>'
     + '<label>正则</label><input type="text" id="re" value="\\d+">'
     + '<div class="row"><label><input type="checkbox" id="ig" checked> 忽略大小写</label>'
     + '<label><input type="checkbox" id="gl" checked> 全局</label>'
@@ -238,6 +427,54 @@ tool("re", "正则表达式测试", function () {
     + '<textarea id="s">订单A100、订单B233、订单C99</textarea>'
     + '<div class="output" id="out"></div>'
     + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
+  function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+  function clsOf(ch) {
+    if (ch >= "0" && ch <= "9") return "\\d";
+    if (ch >= "a" && ch <= "z") return "[a-z]";
+    if (ch >= "A" && ch <= "Z") return "[A-Z]";
+    if (ch >= "\u4e00" && ch <= "\u9fa5") return "[\\u4e00-\\u9fa5]";
+    return null;
+  }
+  function patOf(line) {
+    var out = "", cls = null, n = 0;
+    function flush() { if (cls) { out += cls + (n > 1 ? "{" + n + "}" : ""); cls = null; n = 0; } }
+    for (var i = 0; i < line.length; i++) {
+      var c = clsOf(line[i]);
+      if (c === null) { flush(); out += escRe(line[i]); }
+      else if (c === cls) n++;
+      else { flush(); cls = c; n = 1; }
+    }
+    flush();
+    return out;
+  }
+  function tokens(p) { return p.match(/\\[dswDSW]|\[[^\]]*\](?:\{\d+\})?|\\.|./g) || []; }
+  RE_LIB.forEach(function (item, i) {
+    var o = document.createElement("option");
+    o.value = String(i);
+    o.textContent = item[0];
+    q("#lib").appendChild(o);
+  });
+  q("#lib").onchange = function () {
+    if (q("#lib").value === "") return;
+    q("#re").value = RE_LIB[+q("#lib").value][1];
+    run();
+  };
+  q("#gen").onclick = function () {
+    var lines = q("#s").value.split(/\r?\n/).map(function (l) { return l.trim(); })
+      .filter(Boolean).slice(0, 20);
+    if (!lines.length) return;
+    var pats = lines.map(patOf);
+    var merged = pats[0];
+    for (var k = 1; k < pats.length; k++) {
+      var a = tokens(merged), b = tokens(pats[k]), m = "";
+      var n2 = Math.min(a.length, b.length);
+      for (var i = 0; i < n2; i++) m += a[i] === b[i] ? a[i] : ".";
+      if (a.length !== b.length) m += ".*";
+      merged = m;
+    }
+    q("#re").value = merged;
+    run();
+  };
   function run() {
     var flags = (q("#ig").checked ? "i" : "") + (q("#gl").checked ? "g" : "") + (q("#mu").checked ? "m" : "");
     var re;
@@ -316,37 +553,63 @@ tool("diff", "文本对比", function () {
 
 // 9. Hash
 tool("hash", "哈希计算", function () {
-  h('<h1>哈希计算</h1><div class="desc">SHA-1 / SHA-256 / SHA-512（Web Crypto）</div>'
+  h('<h1>哈希计算</h1><div class="desc">SHA-1 / SHA-256 / SHA-512（纯 JS 实现，http 环境也可用）</div>'
     + '<textarea id="s" placeholder="输入文本"></textarea>'
     + '<div class="row"><button class="btn" id="go">计算</button></div>'
     + '<div class="output" id="out"></div>'
     + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
-  q("#go").onclick = async function () {
+  q("#go").onclick = function () {
     var data = new TextEncoder().encode(q("#s").value);
-    var res = [];
-    for (var k = 0; k < 3; k++) {
-      var alg = ["SHA-1", "SHA-256", "SHA-512"][k];
-      var buf = await crypto.subtle.digest(alg, data);
-      var hex = [];
-      var bytes = new Uint8Array(buf);
-      for (var i = 0; i < bytes.length; i++) hex.push(bytes[i].toString(16).padStart(2, "0"));
-      res.push(alg + ":  " + hex.join(""));
-    }
     q("#out").className = "output ok";
-    q("#out").innerText = res.join("\n");
+    q("#out").innerText = "SHA-1:   " + sha1(data) + "\nSHA-256: " + sha256(data) + "\nSHA-512: " + sha512(data);
   };
+  q("#go").click();
   q("#cp").onclick = copyOut;
 });
 
 // 10. Color
+var COLOR_NAMES = {
+  black: "#000000", white: "#ffffff", red: "#ff0000", green: "#008000", blue: "#0000ff",
+  yellow: "#ffff00", orange: "#ffa500", purple: "#800080", pink: "#ffc0cb", gray: "#808080",
+  grey: "#808080", cyan: "#00ffff", magenta: "#ff00ff", brown: "#a52a2a", navy: "#000080",
+  teal: "#008080", olive: "#808000", lime: "#00ff00", indigo: "#4b0082", violet: "#ee82ee",
+  gold: "#ffd700", silver: "#c0c0c0", skyblue: "#87ceeb", coral: "#ff7f50", salmon: "#fa8072",
+  tomato: "#ff6347", khaki: "#f0e68c", beige: "#f5f5dc", ivory: "#fffff0", snow: "#fffafa"
+};
 tool("color", "颜色转换", function () {
-  h('<h1>颜色转换</h1><div class="desc">HEX / RGB / HSL</div>'
+  h('<h1>颜色转换</h1><div class="desc">支持 #hex / rgb() / hsl() / 颜色名，点击行复制，色阶可点选</div>'
     + '<div class="row"><input type="color" id="pick" value="#38bdf8" style="width:80px;height:38px;border:none;background:none;cursor:pointer">'
-    + '<input type="text" id="hex" value="#38bdf8" style="width:140px">'
+    + '<input type="text" id="hex" value="#38bdf8" style="flex:1" placeholder="#38bdf8 / rgb(56,189,248) / hsl(199,93%,60%) / skyblue">'
     + '<button class="btn" id="go">转换</button></div>'
     + '<div class="swatch" id="sw" style="margin-top:10px;background:#38bdf8"></div>'
     + '<div class="output" id="out"></div>'
+    + '<div class="shades" id="shades"></div>'
     + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
+  function hsl2rgb(h2, s2, l2) {
+    s2 /= 100; l2 /= 100;
+    var k = function (n3) { return (n3 + h2 / 30) % 12; };
+    var a = s2 * Math.min(l2, 1 - l2);
+    var f = function (n3) { return l2 - a * Math.max(-1, Math.min(k(n3) - 3, Math.min(9 - k(n3), 1))); };
+    return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+  }
+  function parseColor(s) {
+    s = s.trim().toLowerCase();
+    if (COLOR_NAMES[s]) s = COLOR_NAMES[s];
+    var m;
+    if ((m = s.match(/^#?([0-9a-f]{3})$/))) {
+      return [parseInt(m[1][0] + m[1][0], 16), parseInt(m[1][1] + m[1][1], 16), parseInt(m[1][2] + m[1][2], 16)];
+    }
+    if ((m = s.match(/^#?([0-9a-f]{6})$/))) {
+      return [parseInt(m[1].slice(0, 2), 16), parseInt(m[1].slice(2, 4), 16), parseInt(m[1].slice(4, 6), 16)];
+    }
+    if ((m = s.match(/^rgba?\(\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})/))) {
+      return [+m[1], +m[2], +m[3]];
+    }
+    if ((m = s.match(/^hsla?\(\s*(\d{1,3})(?:deg)?\s*[,\s]\s*(\d{1,3})%\s*[,\s]\s*(\d{1,3})%/))) {
+      return hsl2rgb(+m[1], +m[2], +m[3]);
+    }
+    return null;
+  }
   function rgb2hsl(r, g, b) {
     r /= 255; g /= 255; b /= 255;
     var mx = Math.max(r, g, b), mn = Math.min(r, g, b);
@@ -362,23 +625,43 @@ tool("color", "颜色转换", function () {
     return [hh, Math.round(s * 100), Math.round(l * 100)];
   }
   function conv() {
-    var hex = q("#hex").value.trim();
-    if (!/^#?[0-9a-fA-F]{6}$/.test(hex)) {
+    var rgb = parseColor(q("#hex").value);
+    if (!rgb) {
       q("#out").className = "output err";
-      q("#out").innerText = "X 请输入 6 位 HEX，如 #38bdf8";
+      q("#out").innerText = "X 无法识别，支持 #hex / rgb() / hsl() / 颜色名";
+      q("#shades").innerHTML = "";
       return;
     }
-    hex = "#" + hex.replace("#", "");
-    q("#sw").style.background = hex;
-    var r = parseInt(hex.slice(1, 3), 16);
-    var g = parseInt(hex.slice(3, 5), 16);
-    var b = parseInt(hex.slice(5, 7), 16);
+    var r = rgb[0], g = rgb[1], b = rgb[2];
+    var hx = "#" + [r, g, b].map(function (v) { return v.toString(16).padStart(2, "0"); }).join("");
+    q("#sw").style.background = hx;
+    q("#pick").value = hx;
     var hsl = rgb2hsl(r, g, b);
+    var lum = ((r * 299 + g * 587 + b * 114) / 1000).toFixed(1);
+    var lines = [
+      ["HEX   " + hx.toUpperCase(), hx],
+      ["RGB   rgb(" + r + ", " + g + ", " + b + ")", "rgb(" + r + ", " + g + ", " + b + ")"],
+      ["HSL   hsl(" + hsl[0] + ", " + hsl[1] + "%, " + hsl[2] + "%)", "hsl(" + hsl[0] + ", " + hsl[1] + "%, " + hsl[2] + "%)"],
+      ["亮度  " + lum + " / 255", lum]
+    ];
     q("#out").className = "output ok";
-    q("#out").innerText = "HEX   " + hex.toUpperCase()
-      + "\nRGB   rgb(" + r + ", " + g + ", " + b + ")"
-      + "\nHSL   hsl(" + hsl[0] + ", " + hsl[1] + "%, " + hsl[2] + "%)"
-      + "\n亮度  " + ((r * 299 + g * 587 + b * 114) / 1000).toFixed(1) + " / 255";
+    q("#out").innerHTML = lines.map(function (l) {
+      return '<div class="copyline" data-c="' + esc(l[1]) + '">' + esc(l[0]) + '</div>';
+    }).join("");
+    var sh = "";
+    for (var i = 0; i <= 10; i++) {
+      var L = 95 - i * 9;
+      var c = hsl2rgb(hsl[0], hsl[1], L);
+      var chx = "#" + c.map(function (v) { return v.toString(16).padStart(2, "0"); }).join("");
+      sh += '<div class="shade" data-c="' + chx + '" style="background:' + chx + '" title="L=' + L + '% ' + chx + '"></div>';
+    }
+    q("#shades").innerHTML = sh;
+    Array.prototype.forEach.call(q("#out").querySelectorAll(".copyline"), function (el) {
+      el.onclick = function () { copyText(el.getAttribute("data-c")); };
+    });
+    Array.prototype.forEach.call(q("#shades").querySelectorAll(".shade"), function (el) {
+      el.onclick = function () { copyText(el.getAttribute("data-c")); };
+    });
   }
   q("#pick").oninput = function () { q("#hex").value = q("#pick").value; conv(); };
   q("#go").onclick = conv;
