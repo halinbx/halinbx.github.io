@@ -270,8 +270,9 @@ tool("json", "JSON 格式化", function () {
 
 // 2. Timestamp
 tool("ts", "时间戳转换", function () {
-  h('<h1>Unix 时间戳转换</h1><div class="desc">时间戳与北京时间互转，实时时钟</div>'
-    + '<div class="output ok" id="clock"></div>'
+  h('<h1>Unix 时间戳转换</h1><div class="desc">时间戳与北京时间互转 · 点击上方时间即可复制</div>'
+    + '<div class="big-clock" id="clock" title="点击复制"></div>'
+    + '<div class="clock-sub" id="clock-sub" title="点击复制时间戳"></div>'
     + '<label>时间戳（秒/毫秒自动识别）</label>'
     + '<input type="text" id="t" placeholder="1724400000">'
     + '<div class="row"><button class="btn" id="c1">转日期</button></div>'
@@ -286,13 +287,18 @@ tool("ts", "时间戳转换", function () {
     return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate())
       + " " + p2(d.getHours()) + ":" + p2(d.getMinutes()) + ":" + p2(d.getSeconds());
   }
+  var lastTime = "", lastTs = "";
   function tick() {
-    q("#clock").innerText = "当前时间 " + fmt(new Date())
-      + " | 时间戳(s) " + Math.floor(Date.now() / 1000);
+    lastTime = fmt(new Date()) + "（周" + "日一二三四五六"[new Date().getDay()] + "）";
+    lastTs = String(Math.floor(Date.now() / 1000));
+    q("#clock").innerText = lastTime;
+    q("#clock-sub").innerText = "时间戳 " + lastTs;
   }
   tick();
   var timer = setInterval(tick, 1000);
   onCleanup.push(function () { clearInterval(timer); });
+  q("#clock").onclick = function () { copyText(lastTime); };
+  q("#clock-sub").onclick = function () { copyText(lastTs); };
   q("#c1").onclick = function () {
     var v = q("#t").value.trim().replace(/[^0-9]/g, "");
     if (!v) return;
@@ -444,38 +450,65 @@ var RE_LIB = [
   ["十六进制颜色", "#[0-9a-fA-F]{6}", "#38bdf8"]
 ];
 tool("re", "正则表达式测试", function () {
-  h('<h1>正则表达式测试</h1><div class="desc">实时高亮，内置常用正则库，可从示例生成</div>'
-    + '<div class="row"><label>常用 <select id="lib" style="width:150px"><option value="">选择…</option></select></label>'
-    + '<button class="btn ghost" id="gen">从示例生成正则</button>'
-    + '<span class="desc" style="margin:0">文本框每行放一个示例</span></div>'
-    + '<label>正则</label><input type="text" id="re" value="\\d+">'
-    + '<div class="row"><label><input type="checkbox" id="ig" checked> 忽略大小写</label>'
-    + '<label><input type="checkbox" id="gl" checked> 全局</label>'
-    + '<label><input type="checkbox" id="mu"> 多行</label></div>'
-    + '<textarea id="s">订单A100、订单B233、订单C99</textarea>'
+  h('<h1>正则表达式测试</h1><div class="desc">输入正则实时测试 · 高亮匹配 · 常用正则一键填入</div>'
+    + '<div class="row"><label>常用 <select id="lib" style="width:170px"><option value="">选择…</option></select></label>'
+    + '<button class="btn ghost" id="gen">从示例生成</button>'
+    + '<span class="desc" style="margin:0">每行一个示例,结构需一致</span></div>'
+    + '<label>正则表达式</label><input type="text" id="re" value="\\d+">'
+    + '<div class="row"><label><input type="checkbox" id="ig" checked> 忽略大小写 (i)</label>'
+    + '<label><input type="checkbox" id="gl" checked> 全局 (g)</label>'
+    + '<label><input type="checkbox" id="mu"> 多行 (m)</label></div>'
+    + '<label>测试文本</label><textarea id="s">订单A100、订单B233、订单C99</textarea>'
     + '<div class="output" id="out"></div>'
-    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
+    + '<div class="row"><button class="btn ghost" id="cp">复制匹配结果</button></div>');
   function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
-  function clsOf(ch) {
-    if (ch >= "0" && ch <= "9") return "\\d";
-    if (ch >= "a" && ch <= "z") return "[a-z]";
-    if (ch >= "A" && ch <= "Z") return "[A-Z]";
-    if (ch >= "\u4e00" && ch <= "\u9fa5") return "[\\u4e00-\\u9fa5]";
-    return null;
-  }
-  function patOf(line) {
-    var out = "", cls = null, n = 0;
-    function flush() { if (cls) { out += cls + (n > 1 ? "{" + n + "}" : ""); cls = null; n = 0; } }
-    for (var i = 0; i < line.length; i++) {
-      var c = clsOf(line[i]);
-      if (c === null) { flush(); out += escRe(line[i]); }
-      else if (c === cls) n++;
-      else { flush(); cls = c; n = 1; }
+
+  // 将一行示例切分为片段:d=数字 L=字母 zh=中文 lit=字面字符
+  function runsOf(line) {
+    var runs = [];
+    function typeOf(ch) {
+      if (ch >= "0" && ch <= "9") return "d";
+      if ((ch >= "a" && ch <= "z") || (ch >= "A" && ch <= "Z")) return "L";
+      if (ch >= "\u4e00" && ch <= "\u9fa5") return "zh";
+      return "lit";
     }
-    flush();
+    var i = 0;
+    while (i < line.length) {
+      var t = typeOf(line[i]);
+      if (t === "lit") { runs.push({ t: "lit", s: line[i] }); i++; continue; }
+      var j = i;
+      while (j < line.length && typeOf(line[j]) === t) j++;
+      runs.push({ t: t, n: j - i });
+      i = j;
+    }
+    return runs;
+  }
+  // 多行示例 → 合并为一个正则:结构必须一致,数量取各行的 min~max
+  function genFromExamples(lines) {
+    var all = lines.map(runsOf);
+    var first = all[0];
+    for (var k = 1; k < all.length; k++) {
+      if (all[k].length !== first.length) return null;
+      for (var i = 0; i < first.length; i++) {
+        if (all[k][i].t !== first[i].t) return null;
+        if (first[i].t === "lit" && all[k][i].s !== first[i].s) return null;
+      }
+    }
+    var out = "";
+    for (var i2 = 0; i2 < first.length; i2++) {
+      var r = first[i2];
+      if (r.t === "lit") { out += escRe(r.s); continue; }
+      var cls = r.t === "d" ? "\\d" : r.t === "L" ? "[a-zA-Z]" : "[\\u4e00-\\u9fa5]";
+      var mn = r.n, mx = r.n;
+      for (var k2 = 1; k2 < all.length; k2++) {
+        mn = Math.min(mn, all[k2][i2].n);
+        mx = Math.max(mx, all[k2][i2].n);
+      }
+      out += cls + (mn === mx ? (mn > 1 ? "{" + mn + "}" : "") : "{" + mn + "," + mx + "}");
+    }
     return out;
   }
-  function tokens(p) { return p.match(/\\[dswDSW]|\[[^\]]*\](?:\{\d+\})?|\\.|./g) || []; }
+
   RE_LIB.forEach(function (item, i) {
     var o = document.createElement("option");
     o.value = String(i);
@@ -484,23 +517,21 @@ tool("re", "正则表达式测试", function () {
   });
   q("#lib").onchange = function () {
     if (q("#lib").value === "") return;
-    q("#re").value = RE_LIB[+q("#lib").value][1];
+    var item = RE_LIB[+q("#lib").value];
+    q("#re").value = item[1];
+    q("#s").value = item[2];
     run();
   };
   q("#gen").onclick = function () {
     var lines = q("#s").value.split(/\r?\n/).map(function (l) { return l.trim(); })
       .filter(Boolean).slice(0, 20);
-    if (!lines.length) return;
-    var pats = lines.map(patOf);
-    var merged = pats[0];
-    for (var k = 1; k < pats.length; k++) {
-      var a = tokens(merged), b = tokens(pats[k]), m = "";
-      var n2 = Math.min(a.length, b.length);
-      for (var i = 0; i < n2; i++) m += a[i] === b[i] ? a[i] : ".";
-      if (a.length !== b.length) m += ".*";
-      merged = m;
+    if (lines.length < 1) { toast("请先在文本框输入示例(每行一个)"); return; }
+    var p = genFromExamples(lines);
+    if (p === null) {
+      toast("各行示例结构不一致,请保持相同格式");
+      return;
     }
-    q("#re").value = merged;
+    q("#re").value = p;
     run();
   };
   function run() {
@@ -509,35 +540,44 @@ tool("re", "正则表达式测试", function () {
     try { re = new RegExp(q("#re").value, flags); }
     catch (e) {
       q("#out").className = "output err";
-      q("#out").innerText = "X " + e.message;
+      q("#out").innerText = "X 正则语法错误:" + e.message;
       return;
     }
     var txt = q("#s").value;
-    var reG = new RegExp(re.source, flags.indexOf("g") >= 0 ? flags : flags + "g");
+    var reG = new RegExp(re.source, (flags.indexOf("g") >= 0 ? flags : flags + "g"));
     var ms = [], m;
     while ((m = reG.exec(txt)) !== null) {
-      ms.push(m);
+      ms.push({ text: m[0], index: m.index, groups: m.slice(1) });
       if (m[0] === "") reG.lastIndex++;
     }
     if (!ms.length) {
       q("#out").className = "output err";
-      q("#out").innerText = "无匹配（0 处）";
+      q("#out").innerText = "无匹配(0 处)";
       return;
     }
     var last = 0, html = "";
     for (var i = 0; i < ms.length; i++) {
-      html += esc(txt.slice(last, ms[i].index)) + "【" + esc(ms[i][0]) + "】";
-      last = ms[i].index + ms[i][0].length;
+      html += esc(txt.slice(last, ms[i].index)) + "【" + esc(ms[i].text) + "】";
+      last = ms[i].index + ms[i].text.length;
     }
     html += esc(txt.slice(last));
+    var list = "\n\n共 " + ms.length + " 处匹配:";
+    ms.forEach(function (x, n) {
+      list += "\n#" + (n + 1) + "  \"" + x.text + "\"  (位置 " + x.index + ")";
+      if (x.groups.length) list += "  捕获组 " + JSON.stringify(x.groups);
+    });
     q("#out").className = "output ok";
-    q("#out").innerHTML = html + "<br><br>共 " + ms.length + " 处匹配";
+    q("#out").innerHTML = html.replace(/\n/g, "<br>") + "<br>" + esc(list);
+    q("#out").dataset.matches = ms.map(function (x) { return x.text; }).join("\n");
   }
   ["re", "s", "ig", "gl", "mu"].forEach(function (id) {
     q("#" + id).oninput = run;
     q("#" + id).onchange = run;
   });
-  q("#cp").onclick = copyOut;
+  q("#cp").onclick = function (ev) {
+    var el = q("#out");
+    copyText(el && el.dataset && el.dataset.matches ? el.dataset.matches : el.innerText, ev.target);
+  };
   run();
 });
 
@@ -605,14 +645,19 @@ var COLOR_NAMES = {
   tomato: "#ff6347", khaki: "#f0e68c", beige: "#f5f5dc", ivory: "#fffff0", snow: "#fffafa"
 };
 tool("color", "颜色转换", function () {
-  h('<h1>颜色转换</h1><div class="desc">支持 #hex / rgb() / hsl() / 颜色名，点击行复制，色阶可点选</div>'
-    + '<div class="row"><input type="color" id="pick" value="#38bdf8" style="width:80px;height:38px;border:none;background:none;cursor:pointer">'
-    + '<input type="text" id="hex" value="#38bdf8" style="flex:1" placeholder="#38bdf8 / rgb(56,189,248) / hsl(199,93%,60%) / skyblue">'
+  h('<h1>颜色转换</h1><div class="desc">HEX / RGB / HSL 互转 · 拖动滑块微调 · 点击卡片复制</div>'
+    + '<div class="color-preview" id="pv"><b id="pv-text">#38BDF8</b><span id="pv-rgb">rgb(56, 189, 248)</span></div>'
+    + '<div class="row" style="margin-top:12px">'
+    + '<input type="color" id="pick" value="#38bdf8" title="点击打开拾色器" style="width:64px;height:40px;border:none;background:none;cursor:pointer">'
+    + '<input type="text" id="hex" value="#38bdf8" style="flex:1" placeholder="输入 #38bdf8 / rgb(56,189,248) / red 均可">'
     + '<button class="btn" id="go">转换</button></div>'
-    + '<div class="swatch" id="sw" style="margin-top:10px;background:#38bdf8"></div>'
-    + '<div class="output" id="out"></div>'
-    + '<div class="shades" id="shades"></div>'
-    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
+    + '<div class="cvcards" id="cards"></div>'
+    + '<label>拖动滑块调整颜色</label>'
+    + '<div class="rgbrow"><span class="rgblab">R</span><input type="range" id="sr" min="0" max="255" value="56"><span class="rgbval" id="vr">56</span></div>'
+    + '<div class="rgbrow"><span class="rgblab">G</span><input type="range" id="sg" min="0" max="255" value="189"><span class="rgbval" id="vg">189</span></div>'
+    + '<div class="rgbrow"><span class="rgblab">B</span><input type="range" id="sb" min="0" max="255" value="248"><span class="rgbval" id="vb">248</span></div>'
+    + '<label>同色系色阶 · 点击复制</label>'
+    + '<div class="shades" id="shades"></div>');
   function hsl2rgb(h2, s2, l2) {
     s2 /= 100; l2 /= 100;
     var k = function (n3) { return (n3 + h2 / 30) % 12; };
@@ -652,48 +697,69 @@ tool("color", "颜色转换", function () {
     }
     return [hh, Math.round(s * 100), Math.round(l * 100)];
   }
-  function conv() {
-    var rgb = parseColor(q("#hex").value);
-    if (!rgb) {
-      q("#out").className = "output err";
-      q("#out").innerText = "X 无法识别，支持 #hex / rgb() / hsl() / 颜色名";
-      q("#shades").innerHTML = "";
-      return;
-    }
-    var r = rgb[0], g = rgb[1], b = rgb[2];
+  var curRgb = [56, 189, 248];
+  function render(fromSliders) {
+    var r = curRgb[0], g = curRgb[1], b = curRgb[2];
     var hx = "#" + [r, g, b].map(function (v) { return v.toString(16).padStart(2, "0"); }).join("");
-    q("#sw").style.background = hx;
-    q("#pick").value = hx;
     var hsl = rgb2hsl(r, g, b);
-    var lum = ((r * 299 + g * 587 + b * 114) / 1000).toFixed(1);
-    var lines = [
-      ["HEX   " + hx.toUpperCase(), hx],
-      ["RGB   rgb(" + r + ", " + g + ", " + b + ")", "rgb(" + r + ", " + g + ", " + b + ")"],
-      ["HSL   hsl(" + hsl[0] + ", " + hsl[1] + "%, " + hsl[2] + "%)", "hsl(" + hsl[0] + ", " + hsl[1] + "%, " + hsl[2] + "%)"],
-      ["亮度  " + lum + " / 255", lum]
+    // 预览大色块
+    q("#pv").style.background = hx;
+    var lum = (r * 299 + g * 587 + b * 114) / 1000;
+    q("#pv").style.color = lum > 140 ? "#0b1120" : "#ffffff";
+    q("#pv-text").textContent = hx.toUpperCase();
+    q("#pv-rgb").textContent = "rgb(" + r + ", " + g + ", " + b + ")";
+    q("#pick").value = hx;
+    if (!fromSliders) {
+      q("#sr").value = r; q("#sg").value = g; q("#sb").value = b;
+      q("#vr").textContent = r; q("#vg").textContent = g; q("#vb").textContent = b;
+    }
+    // 结果卡片
+    var cards = [
+      ["HEX", hx.toUpperCase()],
+      ["RGB", "rgb(" + r + ", " + g + ", " + b + ")"],
+      ["HSL", "hsl(" + hsl[0] + ", " + hsl[1] + "%, " + hsl[2] + "%)"]
     ];
-    q("#out").className = "output ok";
-    q("#out").innerHTML = lines.map(function (l) {
-      return '<div class="copyline" data-c="' + esc(l[1]) + '">' + esc(l[0]) + '</div>';
+    q("#cards").innerHTML = cards.map(function (c) {
+      return '<div class="cvcard" data-c="' + esc(c[1]) + '">'
+        + '<span class="cvtag">' + c[0] + '</span>'
+        + '<code>' + esc(c[1]) + '</code>'
+        + '<span class="cvcopy">点击复制</span></div>';
     }).join("");
+    Array.prototype.forEach.call(q("#cards").querySelectorAll(".cvcard"), function (el) {
+      el.onclick = function () { copyText(el.getAttribute("data-c")); };
+    });
+    // 色阶
     var sh = "";
     for (var i = 0; i <= 10; i++) {
       var L = 95 - i * 9;
       var c = hsl2rgb(hsl[0], hsl[1], L);
       var chx = "#" + c.map(function (v) { return v.toString(16).padStart(2, "0"); }).join("");
-      sh += '<div class="shade" data-c="' + chx + '" style="background:' + chx + '" title="L=' + L + '% ' + chx + '"></div>';
+      sh += '<div class="shade" data-c="' + chx + '" style="background:' + chx + '" title="亮度 ' + L + '% · ' + chx + '"></div>';
     }
     q("#shades").innerHTML = sh;
-    Array.prototype.forEach.call(q("#out").querySelectorAll(".copyline"), function (el) {
-      el.onclick = function () { copyText(el.getAttribute("data-c")); };
-    });
     Array.prototype.forEach.call(q("#shades").querySelectorAll(".shade"), function (el) {
       el.onclick = function () { copyText(el.getAttribute("data-c")); };
     });
   }
+  function conv() {
+    var rgb = parseColor(q("#hex").value);
+    if (!rgb) { toast("无法识别,支持 #hex / rgb() / hsl() / 颜色名"); return; }
+    curRgb = rgb;
+    render(false);
+  }
+  function onSlider() {
+    curRgb = [+q("#sr").value, +q("#sg").value, +q("#sb").value];
+    q("#vr").textContent = curRgb[0];
+    q("#vg").textContent = curRgb[1];
+    q("#vb").textContent = curRgb[2];
+    var hx = "#" + curRgb.map(function (v) { return v.toString(16).padStart(2, "0"); }).join("");
+    q("#hex").value = hx;
+    render(true);
+  }
   q("#pick").oninput = function () { q("#hex").value = q("#pick").value; conv(); };
   q("#go").onclick = conv;
-  q("#cp").onclick = copyOut;
+  q("#hex").onkeydown = function (e) { if (e.key === "Enter") conv(); };
+  ["sr", "sg", "sb"].forEach(function (id) { q("#" + id).oninput = onSlider; });
   conv();
 });
 

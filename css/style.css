@@ -212,6 +212,75 @@ input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent);
 }
 .shade:hover { transform: scale(1.1); border-color: var(--accent); }
 
+.big-clock {
+  text-align: center;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 18px 10px 4px;
+  cursor: pointer;
+  user-select: none;
+  font-family: Consolas, "Courier New", monospace;
+  color: var(--accent);
+  text-shadow: 0 2px 12px rgba(56, 189, 248, 0.35);
+}
+.big-clock:hover { color: #7dd3fc; }
+.clock-sub {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  font-family: Consolas, monospace;
+  padding: 0 0 8px;
+  margin-bottom: 12px;
+  border-bottom: 1px dashed var(--border);
+  cursor: pointer;
+  user-select: none;
+}
+.clock-sub:hover { color: var(--accent); }
+
+.seo-links { padding: 10px 14px 6px; border-top: 1px solid var(--border); }
+.seo-links a { display: block; color: var(--muted); text-decoration: none; font-size: 12px; padding: 3px 0; }
+.seo-links a:hover { color: var(--accent); }
+
+.color-preview {
+  height: 86px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.color-preview b { font-size: 20px; font-family: Consolas, monospace; letter-spacing: 1px; }
+.color-preview span { font-size: 12px; opacity: 0.75; font-family: Consolas, monospace; }
+
+.cvcards { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.cvcard {
+  flex: 1;
+  min-width: 150px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.cvcard:hover { border-color: var(--accent); transform: translateY(-2px); }
+.cvcard .cvtag { font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing: 1px; }
+.cvcard code { font-size: 14px; color: var(--accent); font-family: Consolas, monospace; word-break: break-all; }
+.cvcard .cvcopy { font-size: 11px; color: #5b6b82; }
+.cvcard:hover .cvcopy { color: var(--muted); }
+
+.rgbrow { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
+.rgblab { width: 18px; font-size: 13px; font-weight: 700; color: var(--muted); font-family: Consolas, monospace; }
+.rgbval { width: 34px; text-align: right; font-size: 13px; font-family: Consolas, monospace; color: var(--accent); }
+.rgbrow input[type="range"] { flex: 1; accent-color: var(--accent); cursor: pointer; height: 4px; }
+
 .toast {
   position: fixed;
   left: 50%;

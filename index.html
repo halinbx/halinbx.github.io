@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>测试工具大全 - 免费在线开发者工具箱（JSON格式化/时间戳/Base64/JWT/正则）</title>
-  <meta name="description" content="免费在线测试工具大全：JSON格式化校验、Unix时间戳转换、Base64编解码、URL编解码、UUID生成、JWT解码、正则测试、文本对比、MD5/SHA哈希计算、颜色转换。纯前端实现，数据不上传，打开即用。">
+  <title>工具大全 - 史上最干净的工具类网站（JSON格式化/时间戳/Base64/JWT/正则）</title>
+  <meta name="description" content="史上最干净的工具类网站——无广告、免登录、数据不上传。在线工具大全：JSON格式化校验、Unix时间戳转换、Base64编解码、URL编解码、UUID生成、JWT解码、正则表达式测试、文本对比、MD5/SHA哈希计算、HEX/RGB颜色转换。">
   <meta name="keywords" content="在线工具,JSON格式化,时间戳转换,Base64编码,URL编码,UUID生成,JWT解码,正则表达式测试,文本对比,MD5,SHA256,颜色转换,开发者工具">
   <link rel="canonical" href="https://owntools.cn/">
 
@@ -13,9 +13,9 @@
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "测试工具大全",
+    "name": "工具大全",
     "url": "https://owntools.cn/",
-    "description": "免费在线开发者测试工具箱:JSON格式化、时间戳转换、Base64、正则测试、哈希计算等,纯前端实现,数据不上传。",
+    "description": "史上最干净的工具类网站:JSON格式化、时间戳转换、Base64、正则测试、哈希计算等,纯前端实现,无广告免登录,数据不上传。",
     "inLanguage": "zh-CN",
     "potentialAction": {
       "@type": "SearchAction",
@@ -28,7 +28,7 @@
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "测试工具大全",
+    "name": "工具大全",
     "url": "https://owntools.cn/",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Any",
@@ -39,10 +39,10 @@
 
   <!-- Open Graph：微信/QQ/微博分享卡片 -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="测试工具大全 - 免费在线开发者工具箱">
+  <meta property="og:title" content="工具大全 - 史上最干净的工具类网站">
   <meta property="og:description" content="10 个开发常用工具：JSON格式化、时间戳、Base64、JWT 解码、正则、哈希、文本对比…纯前端、免登录、数据不上传。">
   <meta property="og:url" content="https://owntools.cn/">
-  <meta property="og:site_name" content="测试工具大全">
+  <meta property="og:site_name" content="工具大全">
 
   <!-- favicon：内嵌 SVG，零额外请求 -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧰%3C/text%3E%3C/svg%3E">
@@ -53,11 +53,14 @@
   <div class="topright-note">纯前端实现 · 数据不出本地</div>
   <div class="layout">
     <aside class="sidebar">
-      <div class="logo"><span class="logo-icon">🧰</span><b>测试工具大全</b></div>
-      <nav id="nav"></nav>
-      <div class="foot">
-        <span id="stat-today" style="display:none"></span>
-      </div>
+      <div class="logo"><span class="logo-icon">🧰</span><b>工具大全</b></div>
+  <nav id="nav"></nav>
+  <div class="seo-links">
+    <a href="#json">JSON在线格式化</a><a href="#ts">时间戳转换</a><a href="#b64">Base64编码</a><a href="#url">URL编解码</a><a href="#uuid">UUID生成器</a><a href="#jwt">JWT解析</a><a href="#re">正则表达式测试</a><a href="#diff">文本对比</a><a href="#hash">MD5哈希计算</a><a href="#color">颜色转换</a>
+  </div>
+  <div class="foot">
+    <span id="stat-today" style="display:none"></span>
+  </div>
     </aside>
     <main id="main"></main>
   </div>
@@ -79,9 +82,10 @@
       var API = "https://abacus.jasoncameron.dev/hit/halinbx-testgo/";
       function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
       function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+      var BASE = 1314; // 人次基数,从 1314 开始叠加
       function show(pv, uv) {
         box.style.display = "inline";
-        box.textContent = "今日访问 " + pv + " 次 · 今日访客 " + uv + " 人";
+        box.textContent = "今日访问 " + (BASE + pv) + " 人次 · 今日访客 " + uv + " 人";
       }
 
       fetch(API + "pv-" + day)
