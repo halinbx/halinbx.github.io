@@ -1,0 +1,31 @@
+name: DNS Cert Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: DNS resolution
+        run: |
+          echo "== A =="
+          dig +short owntools.cn A
+          echo "== AAAA =="
+          dig +short owntools.cn AAAA
+          echo "== NS =="
+          dig +short owntools.cn NS
+          echo "== CAA =="
+          dig +short owntools.cn CAA
+          echo "== authoritative answer from hichina =="
+          dig +short @dns17.hichina.com owntools.cn A
+          dig +short @dns18.hichina.com owntools.cn A
+      - name: HTTPS cert check
+        run: |
+          echo | timeout 20 openssl s_client -connect owntools.cn:443 -servername owntools.cn 2>/dev/null | openssl x509 -noout -subject -ext subjectAltName || echo "TLS FAIL"
+          curl -sI --max-time 20 http://owntools.cn/ | head -5
+      - name: Public DoH view (Google/Cloudflare)
+        run: |
+          curl -s --max-time 20 "https://dns.google/resolve?name=owntools.cn&type=A" || echo google fail
+          echo
+          curl -s --max-time 20 -H "accept: application/dns-json" "https://cloudflare-dns.com/dns-query?name=owntools.cn&type=A" || echo cf fail
