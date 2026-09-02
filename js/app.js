@@ -449,22 +449,20 @@ tool("json", "JSON 格式化", function () {
 }, "json format 校验 压缩 转换 validate pretty 实时 行号 折叠 复制 下载");
 
 tool("ts", "时间戳转换", function () {
-  h('<h1>Unix 时间戳转换</h1><div class="desc">时间戳与北京时间互转 · 秒/毫秒自动识别 · 相对时间 · 点击上方即可复制</div>'
-    + '<div class="big-clock" id="clock" title="点击复制当前时间"></div>'
-    + '<div class="clock-sub"><span id="clock-sub" title="点击复制秒级时间戳"></span>  ·  <span id="clock-ms" title="点击复制毫秒时间戳"></span></div>'
+  h('<h1>Unix 时间戳转换</h1><div class="desc">时间戳与北京时间互转 · 秒/毫秒自动识别 · 相对时间 · 点击结果即可复制</div>'
+    + '<div class="ts-col">'
     + '<label>① 时间戳 → 日期</label>'
-    + '<div class="row"><input type="text" id="t" placeholder="1724400000(秒/毫秒自动识别)" style="flex:1">'
-    + '<button class="btn ghost" id="nowts">当前秒</button>'
-    + '<button class="btn ghost" id="nowms">当前毫秒</button>'
-    + '<button class="btn" id="c1">转换</button></div>'
-    + '<div class="output" id="out"></div>'
-    + '<div class="row"><button class="btn ghost" id="cp1">复制结果</button></div>'
+    + '<input type="text" id="t" placeholder="1724400000(秒/毫秒自动识别)" autocomplete="off">'
+    + '<button class="btn ts-btn" id="c1">转 换</button>'
+    + '<div class="ts-res" id="res1"></div>'
     + '<label>② 日期 → 时间戳</label>'
-    + '<div class="row"><input type="text" id="d" placeholder="2026-08-23 15:30:00" style="flex:1">'
-    + '<button class="btn ghost" id="nowd">现在</button>'
-    + '<button class="btn" id="c2">转换</button></div>'
-    + '<div class="output" id="out2"></div>'
-    + '<div class="row"><button class="btn ghost" id="cp2">复制结果</button></div>');
+    + '<input type="text" id="d" placeholder="2026-08-23 15:30:00" autocomplete="off">'
+    + '<button class="btn ts-btn" id="c2">转 换</button>'
+    + '<div class="ts-res" id="res2"></div>'
+    + '</div>'
+    + '<div class="ts-divider"></div>'
+    + '<div class="ts-now-title">当 前 时 间</div>'
+    + '<div class="ts-rows" id="now"></div>');
   function fmt(d) {
     return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate())
       + " " + p2(d.getHours()) + ":" + p2(d.getMinutes()) + ":" + p2(d.getSeconds());
@@ -483,52 +481,98 @@ tool("ts", "时间戳转换", function () {
     var start = new Date(d.getFullYear(), 0, 1);
     return Math.floor((d - start) / 86400000) + 1;
   }
-  var lastTime = "", lastTs = "", lastMs = "";
-  function tick() {
-    var now = new Date();
-    lastTime = fmt(now) + "(" + week(now) + ")";
-    lastTs = String(Math.floor(now.getTime() / 1000));
-    lastMs = String(now.getTime());
-    q("#clock").innerText = lastTime;
-    q("#clock-sub").innerText = "秒 " + lastTs;
-    q("#clock-ms").innerText = "毫秒 " + lastMs;
+  // 渲染一组「标签 + 蓝色值 + 复制链接」结果行;err 时显示错误
+  function renderRows(box, rows, err) {
+    box.innerHTML = "";
+    if (err) {
+      var e = document.createElement("div");
+      e.className = "ts-err";
+      e.innerText = "✗ " + err;
+      box.appendChild(e);
+      return;
+    }
+    rows.forEach(function (r, i) {
+      var line = document.createElement("div");
+      line.className = "ts-line";
+      var k = document.createElement("span");
+      k.className = "ts-k";
+      k.innerText = r[0];
+      var v = document.createElement("span");
+      v.className = "ts-v";
+      v.innerText = r[1];
+      v.title = "点击复制";
+      v.onclick = function () { copyText(r[1]); };
+      line.appendChild(k);
+      line.appendChild(v);
+      if (i === 0) {  // 第一行右侧提供「复制」链接
+        var cp = document.createElement("span");
+        cp.className = "ts-copy";
+        cp.innerText = "复制";
+        cp.onclick = function (ev) { copyText(r[1], ev.target); };
+        line.appendChild(cp);
+      }
+      box.appendChild(line);
+    });
   }
-  tick();
-  var timer = setInterval(tick, 1000);
-  onCleanup.push(function () { clearInterval(timer); });
-  q("#clock").onclick = function () { copyText(lastTime); };
-  q("#clock-sub").onclick = function () { copyText(lastTs); };
-  q("#clock-ms").onclick = function () { copyText(lastMs); };
-  q("#nowts").onclick = function () { q("#t").value = lastTs; q("#c1").click(); };
-  q("#nowms").onclick = function () { q("#t").value = lastMs; q("#c1").click(); };
   q("#c1").onclick = function () {
     var v = q("#t").value.trim().replace(/[^0-9]/g, "");
-    if (!v) { q("#out").className = "output err"; q("#out").innerText = "X 请输入时间戳"; return; }
+    if (!v) { renderRows(q("#res1"), null, "请输入时间戳"); return; }
     var ms = v.length >= 13 ? +v : +v * 1000;
     var d = new Date(ms);
-    q("#out").className = "output ok";
-    q("#out").innerText = "北京时间  " + fmt(d) + "(" + week(d) + ")"
-      + "\nISO 8601  " + d.toISOString()
-      + "\n相对现在  " + rel(d)
-      + "\n今年第 " + doy(d) + " 天";
+    renderRows(q("#res1"), [
+      ["北京时间", fmt(d) + "(" + week(d) + ")"],
+      ["ISO 8601", d.toISOString()],
+      ["相对现在", rel(d)],
+      ["今年第", doy(d) + " 天"]
+    ]);
   };
-  q("#nowd").onclick = function () { q("#d").value = fmt(new Date()); q("#c2").click(); };
   q("#c2").onclick = function () {
     var raw = q("#d").value.trim();
     var d = new Date(raw.indexOf("T") >= 0 ? raw : raw.replace(/-/g, "/"));
     if (isNaN(d.getTime())) {
-      q("#out2").className = "output err";
-      q("#out2").innerText = "X 日期格式无效,示例 2026-08-23 15:30:00";
+      renderRows(q("#res2"), null, "日期格式无效,示例 2026-08-23 15:30:00");
       return;
     }
-    q("#out2").className = "output ok";
-    q("#out2").innerText = "秒级时间戳  " + Math.floor(d.getTime() / 1000)
-      + "\n毫秒时间戳  " + d.getTime()
-      + "\nISO 8601   " + d.toISOString()
-      + "\n星期     " + week(d);
+    renderRows(q("#res2"), [
+      ["秒级时间戳", String(Math.floor(d.getTime() / 1000))],
+      ["毫秒时间戳", String(d.getTime())],
+      ["ISO 8601", d.toISOString()],
+      ["星期", week(d)]
+    ]);
   };
-  q("#cp1").onclick = function (ev) { copyOut(ev); };
-  q("#cp2").onclick = function (ev) { copyOut(ev, "out2"); };
+  q("#t").onkeydown = function (e) { if (e.key === "Enter") q("#c1").click(); };
+  q("#d").onkeydown = function (e) { if (e.key === "Enter") q("#c2").click(); };
+  // 当前时间:4 行结果,每秒刷新,点击复制
+  function renderNow() {
+    var box = q("#now");
+    if (!box) return;
+    var nd = new Date();
+    var rows = [
+      ["北京时间", fmt(nd) + "(" + week(nd) + ")"],
+      ["秒级时间戳", String(Math.floor(nd.getTime() / 1000))],
+      ["毫秒时间戳", String(nd.getTime())],
+      ["UTC 时间", nd.toISOString().replace("T", " ").slice(0, 19)]
+    ];
+    box.innerHTML = "";
+    rows.forEach(function (r) {
+      var line = document.createElement("div");
+      line.className = "ts-row";
+      var k = document.createElement("span");
+      k.className = "ts-k";
+      k.innerText = r[0];
+      var v = document.createElement("span");
+      v.className = "ts-v";
+      v.innerText = r[1];
+      v.title = "点击复制";
+      v.onclick = function () { copyText(r[1]); };
+      line.appendChild(k);
+      line.appendChild(v);
+      box.appendChild(line);
+    });
+  }
+  renderNow();
+  var timer = setInterval(renderNow, 1000);
+  onCleanup.push(function () { clearInterval(timer); });
 }, "timestamp 时间戳 毫秒 秒 日期 date clock 时钟 现在 相对 转换 unix");
 
 // 3. Base64

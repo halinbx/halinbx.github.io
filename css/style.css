@@ -212,31 +212,75 @@ input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent);
 }
 .shade:hover { transform: scale(1.1); border-color: var(--accent); }
 
-.big-clock {
-  text-align: center;
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  padding: 18px 10px 4px;
-  cursor: pointer;
-  user-select: none;
-  font-family: Consolas, "Courier New", monospace;
-  color: var(--accent);
-  text-shadow: 0 2px 12px rgba(56, 189, 248, 0.35);
+/* ===== 时间戳工具(参考 1.png 布局:窄卡片 + 结果行) ===== */
+.ts-col { max-width: 480px; }
+.ts-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 0;
+  font-size: 15px;
+  letter-spacing: 4px;
 }
-.big-clock:hover { color: #7dd3fc; }
-.clock-sub {
-  text-align: center;
-  font-size: 13px;
+.ts-res { margin-top: 14px; min-height: 8px; }
+.ts-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  font-size: 13.5px;
+}
+.ts-k {
   color: var(--muted);
-  font-family: Consolas, monospace;
-  padding: 0 0 8px;
-  margin-bottom: 12px;
-  border-bottom: 1px dashed var(--border);
+  flex-shrink: 0;
+  min-width: 96px;
+  font-family: inherit;
+}
+.ts-v {
+  color: var(--accent);
+  font-family: Consolas, "Courier New", monospace;
+  word-break: break-all;
+  cursor: pointer;
+  transition: color 0.12s;
+}
+.ts-v:hover { color: #7dd3fc; text-decoration: underline; }
+.ts-copy {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--accent);
   cursor: pointer;
   user-select: none;
+  opacity: 0.85;
 }
-.clock-sub:hover { color: var(--accent); }
+.ts-copy:hover { opacity: 1; text-decoration: underline; }
+.ts-err { color: var(--err); font-size: 13px; padding: 6px 0; }
+.ts-divider {
+  max-width: 480px;
+  height: 1px;
+  background: var(--border);
+  margin: 26px 0 14px;
+}
+.ts-now-title {
+  max-width: 480px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.ts-rows { max-width: 480px; }
+.ts-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  font-size: 13.5px;
+  border-bottom: 1px dashed rgba(43, 59, 82, 0.5);
+}
+.ts-row:last-child { border-bottom: none; }
+.ts-row .ts-k { min-width: 96px; }
+.ts-row .ts-v { cursor: pointer; }
 
 .seo-links { padding: 10px 14px 6px; border-top: 1px solid var(--border); }
 .seo-links a { display: block; color: var(--muted); text-decoration: none; font-size: 12px; padding: 3px 0; }
