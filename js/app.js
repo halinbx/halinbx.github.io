@@ -245,82 +245,267 @@ function sha512(msg) {
 
 // 1. JSON
 tool("json", "JSON 格式化", function () {
-  h('<h1>JSON 格式化 / 校验</h1><div class="desc">粘贴 JSON,支持格式化、压缩、转义</div>'
+  h('<h1>JSON 格式化 / 校验</h1><div class="desc">格式化 · 压缩 · 行号 · 折叠 · 语法高亮 · 保存 / 下载 · 数据不出浏览器</div>'
     + '<textarea id="j" placeholder=\'{"name":"test","items":[1,2,3]}\'></textarea>'
     + '<div class="row"><button class="btn" id="fmt">格式化</button>'
-    + '<button class="btn ghost" id="min">压缩</button></div>'
-    + '<div class="output" id="out"></div>'
+    + '<button class="btn ghost" id="min">压缩</button>'
+    + '<button class="btn ghost" id="dl">下载 .json</button>'
+    + '<button class="btn ghost" id="sv">保存</button>'
+    + '<button class="btn ghost" id="clr">清空</button>'
+    + '<label><input type="checkbox" id="ln" checked> 行号</label></div>'
+    + '<div class="row"><button class="btn ghost" id="foldall">全部折叠</button>'
+    + '<button class="btn ghost" id="expandall">全部展开</button>'
+    + '<span class="desc" style="margin:0" id="stat"></span></div>'
+    + '<div class="output json-out" id="out"></div>'
     + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
   var out = q("#out");
+  var lastText = "", lastName = "formatted.json";
+  var LS_KEY = "owntools-json-input";
+  try { var saved = localStorage.getItem(LS_KEY); if (saved) q("#j").value = saved; } catch (e) {}
+  q("#j").oninput = function () {
+    try { localStorage.setItem(LS_KEY, q("#j").value); } catch (e) {}
+  };
   function tryParse() {
-    try { return [JSON.parse(q("#j").value), null]; }
-    catch (e) { return [null, e.message]; }
+    var raw = q("#j").value;
+    try { return [JSON.parse(raw), null]; }
+    catch (e) {
+      var msg = e.message;
+      var pm = /position (\d+)/.exec(msg);
+      if (pm) {
+        var upto = raw.slice(0, +pm[1]);
+        var line = upto.split("\n").length;
+        var col = +pm[1] - (upto.lastIndexOf("\n") + 1) + 1;
+        msg = "第 " + line + " 行 第 " + col + " 列附近:" + msg;
+      }
+      return [null, msg];
+    }
   }
+  function hlLine(line) {
+    var re = /("(?:\\.|[^"\\])*")(\s*:)?|\b(?:true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g;
+    var res = "", last = 0, m;
+    while ((m = re.exec(line)) !== null) {
+      res += esc(line.slice(last, m.index));
+      if (m[1] !== undefined)
+        res += '<span class="j-' + (m[2] ? "key" : "str") + '">' + esc(m[1]) + "</span>" + esc(m[2] || "");
+      else
+        res += '<span class="j-' + (/^(?:true|false|null)$/.test(m[0]) ? "kw" : "num") + '">' + esc(m[0]) + "</span>";
+      last = m.index + m[0].length;
+    }
+    return res + esc(line.slice(last));
+  }
+  function deltaOf(line) {
+    var d = 0, inStr = false;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line[i];
+      if (inStr) { if (ch === "\\") i++; else if (ch === '"') inStr = false; continue; }
+      if (ch === '"') inStr = true;
+      else if (ch === "{" || ch === "[") d++;
+      else if (ch === "}" || ch === "]") d--;
+    }
+    return d;
+  }
+  function buildTree(text) {
+    var lines = text.split("\n");
+    var deltas = lines.map(deltaOf);
+    var match = {}, st = [];
+    for (var i = 0; i < lines.length; i++) {
+      if (deltas[i] > 0) st.push(i);
+      else if (deltas[i] < 0 && st.length) match[st.pop()] = i;
+    }
+    var view = document.createElement("div");
+    view.className = "jview";
+    var stack = [];
+    var cur = view;
+    for (var k = 0; k < lines.length; k++) {
+      var closeIdx = match[k];
+      if (closeIdx !== undefined && closeIdx > k + 1) {
+        var fold = document.createElement("div");
+        fold.className = "jfold";
+        var head = document.createElement("div");
+        head.className = "jl jhead";
+        head.innerHTML = '<span class="jtog"></span>' + hlLine(lines[k])
+          + '<span class="jell"> … ' + esc(lines[closeIdx].trim()) + "</span>";
+        fold.appendChild(head);
+        var body = document.createElement("div");
+        body.className = "jbody";
+        fold.appendChild(body);
+        cur.appendChild(fold);
+        stack.push({ parent: cur, close: closeIdx, fold: fold });
+        cur = body;
+        continue;
+      }
+      if (stack.length && stack[stack.length - 1].close === k) {
+        var e = stack.pop();
+        var tail = document.createElement("div");
+        tail.className = "jl jtail";
+        tail.innerHTML = hlLine(lines[k]);
+        e.fold.appendChild(tail);
+        cur = e.parent;
+        continue;
+      }
+      var ln = document.createElement("div");
+      ln.className = "jl";
+      ln.innerHTML = hlLine(lines[k]);
+      cur.appendChild(ln);
+    }
+    return view;
+  }
+  function countNodes(o) {
+    var c = 1;
+    if (o && typeof o === "object") Object.keys(o).forEach(function (k) { c += countNodes(o[k]); });
+    return c;
+  }
+  function setStat(s) { q("#stat").innerText = s; }
   q("#fmt").onclick = function () {
     var r = tryParse();
-    out.className = r[1] ? "output err" : "output ok";
-    out.innerText = r[1] ? "X " + r[1] : JSON.stringify(r[0], null, 2);
+    if (r[1]) {
+      out.className = "output err";
+      out.innerText = "X " + r[1];
+      setStat("");
+      return;
+    }
+    var pretty = JSON.stringify(r[0], null, 2);
+    lastText = pretty; lastName = "formatted.json";
+    out.className = "output json-out" + (q("#ln").checked ? "" : " hide-ln");
+    out.innerHTML = "";
+    out.appendChild(buildTree(pretty));
+    setStat("✓ 有效 JSON · " + countNodes(r[0]) + " 个节点 · " + pretty.split("\n").length + " 行");
   };
   q("#min").onclick = function () {
     var r = tryParse();
-    out.className = r[1] ? "output err" : "output ok";
-    out.innerText = r[1] ? "X " + r[1] : JSON.stringify(r[0]);
+    if (r[1]) { out.className = "output err"; out.innerText = "X " + r[1]; setStat(""); return; }
+    lastText = JSON.stringify(r[0]); lastName = "minified.json";
+    out.className = "output ok";
+    out.innerText = lastText;
+    setStat("✓ 已压缩 · " + lastText.length + " 字符");
   };
-  q("#cp").onclick = copyOut;
-}, "json format 校验 压缩 转义 validate pretty");
+  q("#ln").onchange = function () { out.classList.toggle("hide-ln", !q("#ln").checked); };
+  q("#foldall").onclick = function () {
+    Array.prototype.forEach.call(out.querySelectorAll(".jfold"), function (f) { f.classList.add("closed"); });
+  };
+  q("#expandall").onclick = function () {
+    Array.prototype.forEach.call(out.querySelectorAll(".jfold"), function (f) { f.classList.remove("closed"); });
+  };
+  out.onclick = function (ev) {
+    var t = ev.target;
+    while (t && t !== out) {
+      if (t.classList && t.classList.contains("jhead")) { t.parentNode.classList.toggle("closed"); return; }
+      t = t.parentNode;
+    }
+  };
+  q("#dl").onclick = function () {
+    if (!lastText) { toast("请先格式化或压缩"); return; }
+    var blob = new Blob([lastText], { type: "application/json;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = lastName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 800);
+  };
+  q("#sv").onclick = function () {
+    try { localStorage.setItem(LS_KEY, q("#j").value); toast("✓ 已保存到本浏览器"); }
+    catch (e) { toast("保存失败:" + e.message); }
+  };
+  q("#clr").onclick = function () {
+    q("#j").value = "";
+    try { localStorage.setItem(LS_KEY, ""); } catch (e) {}
+    out.className = "output json-out";
+    out.innerHTML = "";
+    lastText = "";
+    setStat("");
+  };
+  q("#cp").onclick = function (ev) {
+    if (lastText) copyText(lastText, ev.target);
+    else toast("请先格式化或压缩");
+  };
+  if (q("#j").value.trim()) q("#fmt").click();
+}, "json format 校验 压缩 转义 validate pretty 行号 折叠 下载 保存 高亮");
 
 // 2. Timestamp
 tool("ts", "时间戳转换", function () {
-  h('<h1>Unix 时间戳转换</h1><div class="desc">时间戳与北京时间互转 · 点击上方时间即可复制</div>'
-    + '<div class="big-clock" id="clock" title="点击复制"></div>'
-    + '<div class="clock-sub" id="clock-sub" title="点击复制时间戳"></div>'
-    + '<label>时间戳(秒/毫秒自动识别)</label>'
-    + '<input type="text" id="t" placeholder="1724400000">'
-    + '<div class="row"><button class="btn" id="c1">转日期</button></div>'
+  h('<h1>Unix 时间戳转换</h1><div class="desc">时间戳与北京时间互转 · 秒/毫秒自动识别 · 相对时间 · 点击上方即可复制</div>'
+    + '<div class="big-clock" id="clock" title="点击复制当前时间"></div>'
+    + '<div class="clock-sub"><span id="clock-sub" title="点击复制秒级时间戳"></span>  ·  <span id="clock-ms" title="点击复制毫秒时间戳"></span></div>'
+    + '<label>① 时间戳 → 日期</label>'
+    + '<div class="row"><input type="text" id="t" placeholder="1724400000(秒/毫秒自动识别)" style="flex:1">'
+    + '<button class="btn ghost" id="nowts">当前秒</button>'
+    + '<button class="btn ghost" id="nowms">当前毫秒</button>'
+    + '<button class="btn" id="c1">转换</button></div>'
     + '<div class="output" id="out"></div>'
     + '<div class="row"><button class="btn ghost" id="cp1">复制结果</button></div>'
-    + '<label>日期字符串</label>'
-    + '<input type="text" id="d" placeholder="2026-08-23 15:30:00">'
-    + '<div class="row"><button class="btn" id="c2">转时间戳</button></div>'
+    + '<label>② 日期 → 时间戳</label>'
+    + '<div class="row"><input type="text" id="d" placeholder="2026-08-23 15:30:00" style="flex:1">'
+    + '<button class="btn ghost" id="nowd">现在</button>'
+    + '<button class="btn" id="c2">转换</button></div>'
     + '<div class="output" id="out2"></div>'
     + '<div class="row"><button class="btn ghost" id="cp2">复制结果</button></div>');
   function fmt(d) {
     return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate())
       + " " + p2(d.getHours()) + ":" + p2(d.getMinutes()) + ":" + p2(d.getSeconds());
   }
-  var lastTime = "", lastTs = "";
+  function week(d) { return "周" + "日一二三四五六"[d.getDay()]; }
+  function rel(d) {
+    var diff = d.getTime() - Date.now();
+    var s = Math.round(Math.abs(diff) / 1000), txt;
+    if (s < 60) txt = s + " 秒";
+    else if (s < 3600) txt = Math.round(s / 60) + " 分钟";
+    else if (s < 86400) txt = Math.round(s / 3600) + " 小时";
+    else txt = Math.round(s / 86400) + " 天";
+    return diff < 0 ? txt + "前" : txt + "后";
+  }
+  function doy(d) {
+    var start = new Date(d.getFullYear(), 0, 1);
+    return Math.floor((d - start) / 86400000) + 1;
+  }
+  var lastTime = "", lastTs = "", lastMs = "";
   function tick() {
-    lastTime = fmt(new Date()) + "(周" + "日一二三四五六"[new Date().getDay()] + ")";
-    lastTs = String(Math.floor(Date.now() / 1000));
+    var now = new Date();
+    lastTime = fmt(now) + "(" + week(now) + ")";
+    lastTs = String(Math.floor(now.getTime() / 1000));
+    lastMs = String(now.getTime());
     q("#clock").innerText = lastTime;
-    q("#clock-sub").innerText = "时间戳 " + lastTs;
+    q("#clock-sub").innerText = "秒 " + lastTs;
+    q("#clock-ms").innerText = "毫秒 " + lastMs;
   }
   tick();
   var timer = setInterval(tick, 1000);
   onCleanup.push(function () { clearInterval(timer); });
   q("#clock").onclick = function () { copyText(lastTime); };
   q("#clock-sub").onclick = function () { copyText(lastTs); };
+  q("#clock-ms").onclick = function () { copyText(lastMs); };
+  q("#nowts").onclick = function () { q("#t").value = lastTs; q("#c1").click(); };
+  q("#nowms").onclick = function () { q("#t").value = lastMs; q("#c1").click(); };
   q("#c1").onclick = function () {
     var v = q("#t").value.trim().replace(/[^0-9]/g, "");
-    if (!v) return;
+    if (!v) { q("#out").className = "output err"; q("#out").innerText = "X 请输入时间戳"; return; }
     var ms = v.length >= 13 ? +v : +v * 1000;
     var d = new Date(ms);
     q("#out").className = "output ok";
-    q("#out").innerText = fmt(d) + "(周" + "日一二三四五六"[d.getDay()] + ")";
+    q("#out").innerText = "北京时间  " + fmt(d) + "(" + week(d) + ")"
+      + "\nISO 8601  " + d.toISOString()
+      + "\n相对现在  " + rel(d)
+      + "\n今年第 " + doy(d) + " 天";
   };
+  q("#nowd").onclick = function () { q("#d").value = fmt(new Date()); q("#c2").click(); };
   q("#c2").onclick = function () {
-    var d = new Date(q("#d").value.replace(/-/g, "/"));
+    var raw = q("#d").value.trim();
+    var d = new Date(raw.indexOf("T") >= 0 ? raw : raw.replace(/-/g, "/"));
     if (isNaN(d.getTime())) {
       q("#out2").className = "output err";
-      q("#out2").innerText = "X 日期格式无效";
+      q("#out2").innerText = "X 日期格式无效,示例 2026-08-23 15:30:00";
       return;
     }
     q("#out2").className = "output ok";
-    q("#out2").innerText = "秒 " + Math.floor(d.getTime() / 1000) + "\n毫秒 " + d.getTime();
+    q("#out2").innerText = "秒级时间戳  " + Math.floor(d.getTime() / 1000)
+      + "\n毫秒时间戳  " + d.getTime()
+      + "\nISO 8601   " + d.toISOString()
+      + "\n星期     " + week(d);
   };
   q("#cp1").onclick = function (ev) { copyOut(ev); };
   q("#cp2").onclick = function (ev) { copyOut(ev, "out2"); };
-}, "timestamp 时间戳 毫秒 日期 date clock 时钟 现在");
+}, "timestamp 时间戳 毫秒 秒 日期 date clock 时钟 现在 相对 转换 unix");
 
 // 3. Base64
 tool("b64", "Base64 编解码", function () {
