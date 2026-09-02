@@ -245,26 +245,26 @@ function sha512(msg) {
 
 // 1. JSON
 tool("json", "JSON 格式化", function () {
-  h('<h1>JSON 格式化 / 校验</h1><div class="desc">格式化 · 压缩 · 行号 · 折叠 · 语法高亮 · 保存 / 下载 · 数据不出浏览器</div>'
-    + '<textarea id="j" placeholder=\'{"name":"test","items":[1,2,3]}\'></textarea>'
-    + '<div class="row"><button class="btn" id="fmt">格式化</button>'
+  h('<h1>JSON 格式化 / 校验</h1><div class="desc">输入或粘贴 JSON,下方实时格式化 · 支持折叠 / 行号 / 高亮 / 错误定位 · 数据不上传</div>'
+    + '<div class="jtoolbar">'
+    + '<button class="btn" id="fmt">格式化</button>'
     + '<button class="btn ghost" id="min">压缩</button>'
-    + '<button class="btn ghost" id="dl">下载 .json</button>'
-    + '<button class="btn ghost" id="sv">保存</button>'
-    + '<button class="btn ghost" id="clr">清空</button>'
-    + '<label><input type="checkbox" id="ln" checked> 行号</label></div>'
-    + '<div class="row"><button class="btn ghost" id="foldall">全部折叠</button>'
+    + '<button class="btn ghost" id="foldall">全部折叠</button>'
     + '<button class="btn ghost" id="expandall">全部展开</button>'
-    + '<span class="desc" style="margin:0" id="stat"></span></div>'
+    + '<label><input type="checkbox" id="ln" checked> 行号</label>'
+    + '<span class="jstatus" id="stat"></span>'
+    + '</div>'
+    + '<textarea id="j" class="jinput" spellcheck="false" placeholder=\'在此输入或粘贴 JSON,例如:{"name":"test","items":[1,2,3]}\'></textarea>'
     + '<div class="output json-out" id="out"></div>'
-    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
-  var out = q("#out");
+    + '<div class="row">'
+    + '<button class="btn ghost" id="cp">复制结果</button>'
+    + '<button class="btn ghost" id="dl">下载 .json</button>'
+    + '<button class="btn ghost" id="clr">清空</button>'
+    + '</div>');
+  var out = q("#out"), statEl = q("#stat");
   var lastText = "", lastName = "formatted.json";
   var LS_KEY = "owntools-json-input";
   try { var saved = localStorage.getItem(LS_KEY); if (saved) q("#j").value = saved; } catch (e) {}
-  q("#j").oninput = function () {
-    try { localStorage.setItem(LS_KEY, q("#j").value); } catch (e) {}
-  };
   function tryParse() {
     var raw = q("#j").value;
     try { return [JSON.parse(raw), null]; }
@@ -275,7 +275,7 @@ tool("json", "JSON 格式化", function () {
         var upto = raw.slice(0, +pm[1]);
         var line = upto.split("\n").length;
         var col = +pm[1] - (upto.lastIndexOf("\n") + 1) + 1;
-        msg = "第 " + line + " 行 第 " + col + " 列附近:" + msg;
+        msg = "第 " + line + " 行 第 " + col + " 列出错:" + msg;
       }
       return [null, msg];
     }
@@ -355,13 +355,24 @@ tool("json", "JSON 格式化", function () {
     if (o && typeof o === "object") Object.keys(o).forEach(function (k) { c += countNodes(o[k]); });
     return c;
   }
-  function setStat(s) { q("#stat").innerText = s; }
-  q("#fmt").onclick = function () {
+  function setStat(s, isErr) {
+    statEl.textContent = s;
+    statEl.classList.toggle("err", !!isErr);
+  }
+  function runPretty() {
+    var raw = q("#j").value;
+    if (!raw.trim()) {
+      out.className = "output json-out" + (q("#ln").checked ? "" : " hide-ln");
+      out.innerHTML = "";
+      lastText = "";
+      setStat("");
+      return;
+    }
     var r = tryParse();
     if (r[1]) {
       out.className = "output err";
-      out.innerText = "X " + r[1];
-      setStat("");
+      out.innerText = "✗ " + r[1];
+      setStat("JSON 无效", true);
       return;
     }
     var pretty = JSON.stringify(r[0], null, 2);
@@ -370,16 +381,34 @@ tool("json", "JSON 格式化", function () {
     out.innerHTML = "";
     out.appendChild(buildTree(pretty));
     setStat("✓ 有效 JSON · " + countNodes(r[0]) + " 个节点 · " + pretty.split("\n").length + " 行");
-  };
-  q("#min").onclick = function () {
+  }
+  function runMin() {
+    var raw = q("#j").value;
+    if (!raw.trim()) { setStat("请先输入 JSON", true); return; }
     var r = tryParse();
-    if (r[1]) { out.className = "output err"; out.innerText = "X " + r[1]; setStat(""); return; }
+    if (r[1]) {
+      out.className = "output err";
+      out.innerText = "✗ " + r[1];
+      setStat("JSON 无效", true);
+      return;
+    }
     lastText = JSON.stringify(r[0]); lastName = "minified.json";
     out.className = "output ok";
     out.innerText = lastText;
     setStat("✓ 已压缩 · " + lastText.length + " 字符");
+  }
+  var deb = null;
+  q("#j").oninput = function () {
+    try { localStorage.setItem(LS_KEY, q("#j").value); } catch (e) {}
+    if (deb) clearTimeout(deb);
+    deb = setTimeout(function () { runPretty(); deb = null; }, 300);
   };
-  q("#ln").onchange = function () { out.classList.toggle("hide-ln", !q("#ln").checked); };
+  q("#fmt").onclick = runPretty;
+  q("#min").onclick = runMin;
+  q("#ln").onchange = function () {
+    if (lastText && lastName === "formatted.json") runPretty();
+    else out.classList.toggle("hide-ln", !q("#ln").checked);
+  };
   q("#foldall").onclick = function () {
     Array.prototype.forEach.call(out.querySelectorAll(".jfold"), function (f) { f.classList.add("closed"); });
   };
@@ -394,7 +423,7 @@ tool("json", "JSON 格式化", function () {
     }
   };
   q("#dl").onclick = function () {
-    if (!lastText) { toast("请先格式化或压缩"); return; }
+    if (!lastText) { toast("没有可下载的结果"); return; }
     var blob = new Blob([lastText], { type: "application/json;charset=utf-8" });
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -403,10 +432,6 @@ tool("json", "JSON 格式化", function () {
     a.click();
     document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 800);
-  };
-  q("#sv").onclick = function () {
-    try { localStorage.setItem(LS_KEY, q("#j").value); toast("✓ 已保存到本浏览器"); }
-    catch (e) { toast("保存失败:" + e.message); }
   };
   q("#clr").onclick = function () {
     q("#j").value = "";
@@ -418,12 +443,11 @@ tool("json", "JSON 格式化", function () {
   };
   q("#cp").onclick = function (ev) {
     if (lastText) copyText(lastText, ev.target);
-    else toast("请先格式化或压缩");
+    else toast("没有可复制的结果");
   };
-  if (q("#j").value.trim()) q("#fmt").click();
-}, "json format 校验 压缩 转义 validate pretty 行号 折叠 下载 保存 高亮");
+  if (q("#j").value.trim()) runPretty();
+}, "json format 校验 压缩 转换 validate pretty 实时 行号 折叠 复制 下载");
 
-// 2. Timestamp
 tool("ts", "时间戳转换", function () {
   h('<h1>Unix 时间戳转换</h1><div class="desc">时间戳与北京时间互转 · 秒/毫秒自动识别 · 相对时间 · 点击上方即可复制</div>'
     + '<div class="big-clock" id="clock" title="点击复制当前时间"></div>'
