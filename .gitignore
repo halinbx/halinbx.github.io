@@ -4,3 +4,6 @@ node_modules/
 Thumbs.db
 *.log
 推广文案.md
+*cookie*.txt
+cookie*.txt
+*_cookie*.txt
