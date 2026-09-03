@@ -42,15 +42,23 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="topright-note">纯前端实现 · 数据不出本地</div>
   <div class="layout">
-    <aside class="sidebar">
-      <div class="logo"><span class="logo-icon">🧰</span><b>工具大全</b></div>
-      <div class="search-box"><input type="text" id="search" placeholder="🔍 搜索工具,回车打开"></div>
-      <div class="side-label">全部工具(20 个)</div>
-      <nav id="nav"></nav>
-      <div class="foot"><span id="stat-today" style="display:none"></span></div>
-    </aside>
+    <header class="topbar">
+      <div class="topbar-in">
+        <div class="logo"><span class="logo-icon">🧰</span><b>工具大全</b></div>
+        <div class="search-box"><input type="text" id="search" placeholder="🔍 搜索工具,回车打开"></div>
+        <div class="topbar-tabs">
+          <nav id="nav"></nav>
+          <div class="more-wrap" id="more-wrap">
+            <button class="more-btn" id="more-btn">更多 ▾</button>
+            <div class="more-menu" id="more-menu">
+              <div class="more-title">其他工具</div>
+            </div>
+          </div>
+        </div>
+        <div class="foot"><span id="stat-today" style="display:none"></span><span class="topright-note">纯前端实现 · 数据不出本地</span></div>
+      </div>
+    </header>
     <main id="main"></main>
   </div>
   <div class="toast" id="toast"></div>

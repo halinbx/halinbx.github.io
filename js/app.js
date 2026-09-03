@@ -245,7 +245,7 @@ function sha512(msg) {
 
 // 1. JSON
 tool("json", "JSON 格式化", function () {
-  h('<h1>JSON 格式化 / 校验</h1><div class="desc">输入或粘贴 JSON,下方实时格式化 · 支持折叠 / 行号 / 高亮 / 错误定位 · 数据不上传</div>'
+  h('<h1>JSON 格式化 / 校验</h1><div class="desc">左侧输入或粘贴 JSON,右侧实时格式化 · 支持折叠 / 行号 / 高亮 / 错误定位 · 数据不上传</div>'
     + '<div class="jtoolbar">'
     + '<button class="btn" id="fmt">格式化</button>'
     + '<button class="btn ghost" id="min">压缩</button>'
@@ -254,12 +254,16 @@ tool("json", "JSON 格式化", function () {
     + '<label><input type="checkbox" id="ln" checked> 行号</label>'
     + '<span class="jstatus" id="stat"></span>'
     + '</div>'
-    + '<textarea id="j" class="jinput" spellcheck="false" placeholder=\'在此输入或粘贴 JSON,例如:{"name":"test","items":[1,2,3]}\'></textarea>'
-    + '<div class="output json-out" id="out"></div>'
+    + '<div class="j-split">'
+    + '<div class="j-left"><textarea id="j" class="jinput" spellcheck="false" placeholder=\'在此输入或粘贴 JSON,例如:{"name":"test","items":[1,2,3]}\'></textarea>'
+    + '<div class="row">'
+    + '<button class="btn ghost" id="clr">清空</button>'
+    + '</div></div>'
+    + '<div class="j-right"><div class="output json-out" id="out"></div>'
     + '<div class="row">'
     + '<button class="btn ghost" id="cp">复制结果</button>'
     + '<button class="btn ghost" id="dl">下载 .json</button>'
-    + '<button class="btn ghost" id="clr">清空</button>'
+    + '</div></div>'
     + '</div>');
   var out = q("#out"), statEl = q("#stat");
   var lastText = "", lastName = "formatted.json";
@@ -1362,15 +1366,34 @@ var ICONS = {
   json: "{}", ts: "⏱", b64: "64", url: "%", uuid: "ID", jwt: "J", re: ".*", diff: "±", hash: "#", color: "◐",
   radix: "0x", wc: "文", case: "Aa", pwd: "***", htmlent: "&", unit: "⇄", calc: "=", datecalc: "📅", ip: "IP", qr: "▩"
 };
+// 顶栏直接展示的 10 个热门工具(按使用率排序),其余收进「更多」菜单
+var HOT_IDS = ["json", "ts", "b64", "url", "re", "jwt", "hash", "calc", "uuid", "qr"];
 var navL = document.getElementById("nav");
+var moreMenu = document.getElementById("more-menu");
 var navBtns = [];
 TOOLS.forEach(function (t) {
   var b = document.createElement("button");
   b.innerHTML = '<span class="ico">' + ICONS[t.id] + "</span>" + esc(t.name);
   b.dataset.kw = (t.id + " " + t.name + " " + t.kw).toLowerCase();
-  b.onclick = function () { openTool(t.id); };
-  navL.appendChild(b);
+  b.dataset.toolId = t.id;
+  b.onclick = function () { openTool(t.id); closeMore(); };
+  if (HOT_IDS.indexOf(t.id) >= 0) {
+    navL.appendChild(b);
+  } else if (moreMenu) {
+    moreMenu.appendChild(b);
+  }
   navBtns.push(b);
+});
+// 「更多」下拉菜单开关
+var moreWrap = document.getElementById("more-wrap");
+var moreBtn = document.getElementById("more-btn");
+function closeMore() { if (moreWrap) moreWrap.classList.remove("open"); }
+if (moreBtn) {
+  moreBtn.onclick = function (e) { e.stopPropagation(); moreWrap.classList.toggle("open"); };
+}
+document.addEventListener("click", function (e) {
+  if (moreWrap && moreWrap.contains(e.target)) return;
+  closeMore();
 });
 
 // ---- 搜索:过滤菜单,回车打开第一个匹配 ----
