@@ -245,7 +245,7 @@ function sha512(msg) {
 
 // 1. JSON
 tool("json", "JSON 格式化", function () {
-  h('<h1>JSON 格式化 / 校验</h1><div class="desc">左侧输入或粘贴 JSON,右侧实时格式化 · 支持折叠 / 行号 / 高亮 / 错误定位 · 数据不上传</div>'
+  h('<h1>JSON 格式化 / 校验</h1>'
     + '<div class="jtoolbar">'
     + '<button class="btn" id="fmt">格式化</button>'
     + '<button class="btn ghost" id="min">压缩</button>'
@@ -453,7 +453,8 @@ tool("json", "JSON 格式化", function () {
 }, "json format 校验 压缩 转换 validate pretty 实时 行号 折叠 复制 下载");
 
 tool("ts", "时间戳转换", function () {
-  h('<h1>Unix 时间戳转换</h1><div class="desc">时间戳与北京时间互转 · 秒/毫秒自动识别 · 相对时间 · 点击结果即可复制</div>'
+  h('<div class="page-center"><div style="width:100%;max-width:480px">'
+    + '<h1>Unix 时间戳转换</h1><div class="desc">时间戳与北京时间互转 · 秒/毫秒自动识别 · 相对时间 · 点击结果即可复制</div>'
     + '<div class="ts-col">'
     + '<label>① 时间戳 → 日期</label>'
     + '<input type="text" id="t" placeholder="1724400000(秒/毫秒自动识别)" autocomplete="off">'
@@ -466,7 +467,8 @@ tool("ts", "时间戳转换", function () {
     + '</div>'
     + '<div class="ts-divider"></div>'
     + '<div class="ts-now-title">当 前 时 间</div>'
-    + '<div class="ts-rows" id="now"></div>');
+    + '<div class="ts-rows" id="now"></div>'
+    + '</div></div>');
   function fmt(d) {
     return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate())
       + " " + p2(d.getHours()) + ":" + p2(d.getMinutes()) + ":" + p2(d.getSeconds());
@@ -581,12 +583,16 @@ tool("ts", "时间戳转换", function () {
 
 // 3. Base64
 tool("b64", "Base64 编解码", function () {
-  h('<h1>Base64 编码 / 解码</h1><div class="desc">支持中文(UTF-8)</div>'
-    + '<textarea id="s" placeholder="输入文本"></textarea>'
-    + '<div class="row"><button class="btn" id="enc">编码</button>'
-    + '<button class="btn ghost" id="dec">解码</button></div>'
+  h('<div class="tool-wrap">'
+    + '<h1>Base64 编码 / 解码</h1><div class="desc">支持中文(UTF-8)· 编码 / 解码一键互转 · 数据不出本地</div>'
+    + '<div class="tcard">'
+    + '<label>输入文本</label>'
+    + '<textarea id="s" placeholder="输入要编码或解码的文本"></textarea>'
+    + '<div class="row"><button class="btn" id="enc">编 码</button>'
+    + '<button class="btn ghost" id="dec">解 码</button>'
+    + '<button class="btn ghost" id="cp">复制结果</button></div>'
     + '<div class="output" id="out"></div>'
-    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
+    + '</div></div>');
   q("#enc").onclick = function () {
     q("#out").className = "output ok";
     q("#out").innerText = btoa(unescape(encodeURIComponent(q("#s").value)));
@@ -605,12 +611,16 @@ tool("b64", "Base64 编解码", function () {
 
 // 4. URL
 tool("url", "URL 编解码", function () {
-  h('<h1>URL 编码 / 解码</h1><div class="desc">encodeURIComponent / decodeURIComponent</div>'
-    + '<textarea id="s" placeholder="https://example.com/?q=hello"></textarea>'
-    + '<div class="row"><button class="btn" id="enc">编码</button>'
-    + '<button class="btn ghost" id="dec">解码</button></div>'
+  h('<div class="tool-wrap">'
+    + '<h1>URL 编码 / 解码</h1><div class="desc">将网址中的中文、空格、& 等特殊字符转换为 %XX 百分号编码,或反向还原 · 常用于接口传参、链接拼接、调试抓包</div>'
+    + '<div class="tcard">'
+    + '<label>输入内容</label>'
+    + '<textarea id="s" placeholder="https://example.com/?q=你好 world"></textarea>'
+    + '<div class="row"><button class="btn" id="enc">编 码</button>'
+    + '<button class="btn ghost" id="dec">解 码</button>'
+    + '<button class="btn ghost" id="cp">复制结果</button></div>'
     + '<div class="output" id="out"></div>'
-    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
+    + '</div></div>');
   q("#enc").onclick = function () {
     q("#out").className = "output ok";
     q("#out").innerText = encodeURIComponent(q("#s").value);
@@ -629,11 +639,19 @@ tool("url", "URL 编解码", function () {
 
 // 5. UUID
 tool("uuid", "UUID 生成器", function () {
-  h('<h1>UUID 生成器</h1><div class="desc">批量生成 v4 UUID</div>'
-    + '<div class="row"><input type="text" id="n" value="5" style="width:100px">'
-    + '<button class="btn" id="g">生成</button></div>'
-    + '<div class="output" id="out"></div>'
-    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
+  h('<div class="tool-wrap">'
+    + '<h1>UUID 生成器</h1><div class="desc">批量生成 UUID v4 · 可选大小写 / 连字符 · 点击单条即可复制</div>'
+    + '<div class="tcard">'
+    + '<div class="row">'
+    + '<label>数量 <input type="number" id="n" value="5" min="1" max="100" style="width:76px"></label>'
+    + '<label>大小写 <select id="cs" style="width:86px"><option value="lower">小写</option><option value="upper">大写</option></select></label>'
+    + '<label><input type="checkbox" id="hy" checked> 包含连字符 -</label>'
+    + '</div>'
+    + '<button class="btn big" id="g">生 成</button>'
+    + '<div class="uuid-list" id="out"></div>'
+    + '<div class="row"><button class="btn ghost" id="cp">复制全部</button></div>'
+    + '</div></div>');
+  var all = [];
   function uuid4() {
     if (crypto.randomUUID) return crypto.randomUUID();
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
@@ -643,55 +661,104 @@ tool("uuid", "UUID 生成器", function () {
   }
   q("#g").onclick = function () {
     var n = Math.min(100, Math.max(1, +q("#n").value || 5));
-    var list = [];
-    for (var i = 0; i < n; i++) list.push(uuid4());
-    q("#out").className = "output ok";
-    q("#out").innerText = list.join("\n");
+    var up = q("#cs").value === "upper";
+    var box = q("#out");
+    all = [];
+    box.innerHTML = "";
+    for (var i = 0; i < n; i++) {
+      var u = uuid4();
+      if (!q("#hy").checked) u = u.replace(/-/g, "");
+      if (up) u = u.toUpperCase();
+      all.push(u);
+      var row = document.createElement("div");
+      row.className = "urow";
+      var sp = document.createElement("span");
+      sp.textContent = u;
+      sp.title = "点击复制";
+      sp.onclick = function () { copyText(this.textContent); };
+      row.appendChild(sp);
+      box.appendChild(row);
+    }
   };
-  q("#cp").onclick = copyOut;
+  q("#cp").onclick = function (ev) {
+    if (all.length) copyText(all.join("\n"), ev.target);
+    else toast("请先生成 UUID");
+  };
+  q("#g").click();
 }, "uuid guid 唯一id 随机id 标识符");
 
 // 6. JWT 解码
 tool("jwt", "JWT 解码", function () {
-  h('<h1>JWT 解码</h1><div class="desc">查看 Header / Payload / 签名,自动换算 exp / iat 时间(纯本地解码,不验证签名)</div>'
+  h('<div class="tool-wrap">'
+    + '<h1>JWT 解码</h1><div class="desc">粘贴 Token 实时解码 · Header / Payload / Signature 分区展示 · 自动换算 exp / nbf / iat 时间与过期状态 · 纯本地解码,不验证签名</div>'
+    + '<div class="tcard">'
     + '<textarea id="s" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"></textarea>'
-    + '<div class="row"><button class="btn" id="go">解码</button></div>'
-    + '<div class="output" id="out"></div>'
-    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
+    + '<div class="row"><button class="btn" id="go">解 码</button>'
+    + '<button class="btn ghost" id="cp">复制 Payload</button></div>'
+    + '</div>'
+    + '<div class="jwt-grid">'
+    + '<div class="tcard jwt-card"><div class="jt">HEADER<span id="alg" style="color:var(--accent);margin-left:8px"></span></div><pre id="hd">-</pre></div>'
+    + '<div class="tcard jwt-card"><div class="jt">PAYLOAD</div><pre id="pl">-</pre></div>'
+    + '</div>'
+    + '<div class="tcard jwt-card"><div class="jt">SIGNATURE</div><pre id="sig">-</pre></div>'
+    + '<div class="tcard" id="tinfo" style="display:none"></div>'
+    + '</div>');
   function b64u(s) { return s.replace(/-/g, "+").replace(/_/g, "/"); }
   function dec(seg) { return JSON.parse(decodeURIComponent(escape(atob(b64u(seg))))); }
-  function ts(pl, k) {
-    if (typeof pl[k] !== "number") return "";
-    var d = new Date(pl[k] * 1000);
-    return "\n" + k + " 对应时间  " + d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate())
+  function tsTxt(v) {
+    var d = new Date(v * 1000);
+    return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate())
       + " " + p2(d.getHours()) + ":" + p2(d.getMinutes()) + ":" + p2(d.getSeconds());
+  }
+  function fail(msg) {
+    q("#hd").textContent = msg;
+    q("#pl").textContent = "";
+    q("#sig").textContent = "";
+    q("#alg").textContent = "";
+    q("#tinfo").style.display = "none";
+    q("#tinfo").innerHTML = "";
   }
   q("#go").onclick = function () {
     var parts = q("#s").value.trim().replace(/^Bearer\s+/i, "").split(".");
-    if (parts.length < 2) {
-      q("#out").className = "output err";
-      q("#out").innerText = "X 格式无效:应为 header.payload.signature 三段(以 . 分隔)";
-      return;
-    }
+    if (parts.length < 2) { fail("✗ 格式无效:应为 header.payload.signature 三段(以 . 分隔)"); return; }
     var head, pl;
-    try { head = dec(parts[0]); } catch (e) {
-      q("#out").className = "output err"; q("#out").innerText = "X Header 解码失败(不是合法 Base64URL)"; return;
-    }
-    try { pl = dec(parts[1]); } catch (e) {
-      q("#out").className = "output err"; q("#out").innerText = "X Payload 解码失败(不是合法 Base64URL)"; return;
-    }
-    var status = "";
+    try { head = dec(parts[0]); } catch (e) { fail("✗ Header 解码失败(不是合法 Base64URL)"); return; }
+    try { pl = dec(parts[1]); } catch (e) { fail("✗ Payload 解码失败(不是合法 Base64URL)"); return; }
+    q("#alg").textContent = head.alg || "";
+    q("#hd").textContent = JSON.stringify(head, null, 2);
+    q("#pl").textContent = JSON.stringify(pl, null, 2);
+    q("#sig").textContent = parts[2] || "(无)";
+    var rows = "";
+    ["iat", "nbf", "exp"].forEach(function (k) {
+      if (typeof pl[k] === "number") {
+        rows += '<div class="hrow"><span class="hname">' + k + '</span><span class="hval">' + esc(tsTxt(pl[k])) + "</span></div>";
+      }
+    });
+    var badge = "";
     if (typeof pl.exp === "number") {
-      status = "\n\n过期状态  " + (pl.exp * 1000 < Date.now() ? "⚠ 已过期" : "✓ 未过期");
+      var expired = pl.exp * 1000 < Date.now();
+      badge = '<div class="hrow"><span class="hname">过期状态</span>'
+        + '<span class="badge ' + (expired ? "err" : "ok") + '">' + (expired ? "⚠ 已过期" : "✓ 未过期") + "</span></div>";
     }
-    q("#out").className = "output ok";
-    q("#out").innerText = "Header\n" + JSON.stringify(head, null, 2)
-      + "\n\nPayload\n" + JSON.stringify(pl, null, 2)
-      + ts(pl, "iat") + ts(pl, "nbf") + ts(pl, "exp") + status
-      + "\n\nSignature\n" + (parts[2] || "(无)");
+    var info = q("#tinfo");
+    if (rows || badge) {
+      info.style.display = "";
+      info.innerHTML = '<div class="hlist">' + rows + badge + "</div>";
+      Array.prototype.forEach.call(info.querySelectorAll(".hval"), function (el) {
+        el.title = "点击复制";
+        el.onclick = function () { copyText(el.textContent); };
+      });
+    } else {
+      info.style.display = "none";
+      info.innerHTML = "";
+    }
   };
-  q("#s").oninput = function () { if (q("#s").value.trim()) q("#go").click(); };
-  q("#cp").onclick = copyOut;
+  q("#s").oninput = function () { q("#go").click(); };
+  q("#cp").onclick = function (ev) {
+    var t = q("#pl").textContent;
+    if (t && t !== "-") copyText(t, ev.target);
+    else toast("没有可复制的解码结果");
+  };
 }, "jwt token 令牌 解析 登录 过期");
 
 // 7. Regex
@@ -708,17 +775,21 @@ var RE_LIB = [
   ["十六进制颜色", "#[0-9a-fA-F]{6}", "#38bdf8"]
 ];
 tool("re", "正则表达式测试", function () {
-  h('<h1>正则表达式测试</h1><div class="desc">输入正则实时测试 · 高亮匹配 · 常用正则一键填入</div>'
+  h('<div class="tool-wrap">'
+    + '<h1>正则表达式测试</h1><div class="desc">输入正则实时测试 · 高亮匹配 · 常用正则库一键填入</div>'
+    + '<div class="tcard">'
     + '<div class="row"><label>常用 <select id="lib" style="width:170px"><option value="">选择…</option></select></label>'
     + '<button class="btn ghost" id="gen">从示例生成</button>'
     + '<span class="desc" style="margin:0">每行一个示例,结构需一致</span></div>'
     + '<label>正则表达式</label><input type="text" id="re" value="\\d+">'
     + '<div class="row"><label><input type="checkbox" id="ig" checked> 忽略大小写 (i)</label>'
     + '<label><input type="checkbox" id="gl" checked> 全局 (g)</label>'
-    + '<label><input type="checkbox" id="mu"> 多行 (m)</label></div>'
+    + '<label><input type="checkbox" id="mu"> 多行 (m)</label>'
+    + '<span class="jstatus" id="mcount"></span></div>'
     + '<label>测试文本</label><textarea id="s">订单A100、订单B233、订单C99</textarea>'
     + '<div class="output" id="out"></div>'
-    + '<div class="row"><button class="btn ghost" id="cp">复制匹配结果</button></div>');
+    + '<div class="row"><button class="btn ghost" id="cp">复制匹配结果</button></div>'
+    + '</div></div>');
   function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
 
   // 将一行示例切分为片段:d=数字 L=字母 zh=中文 lit=字面字符
@@ -797,6 +868,7 @@ tool("re", "正则表达式测试", function () {
     var re;
     try { re = new RegExp(q("#re").value, flags); }
     catch (e) {
+      q("#mcount").textContent = "";
       q("#out").className = "output err";
       q("#out").innerText = "X 正则语法错误:" + e.message;
       return;
@@ -809,16 +881,18 @@ tool("re", "正则表达式测试", function () {
       if (m[0] === "") reG.lastIndex++;
     }
     if (!ms.length) {
+      q("#mcount").textContent = "0 处匹配";
       q("#out").className = "output err";
       q("#out").innerText = "无匹配(0 处)";
       return;
     }
     var last = 0, html = "";
     for (var i = 0; i < ms.length; i++) {
-      html += esc(txt.slice(last, ms[i].index)) + "【" + esc(ms[i].text) + "】";
+      html += esc(txt.slice(last, ms[i].index)) + '<span class="re-hl">' + esc(ms[i].text) + "</span>";
       last = ms[i].index + ms[i].text.length;
     }
     html += esc(txt.slice(last));
+    q("#mcount").textContent = "共 " + ms.length + " 处匹配";
     var list = "\n\n共 " + ms.length + " 处匹配:";
     ms.forEach(function (x, n) {
       list += "\n#" + (n + 1) + "  \"" + x.text + "\"  (位置 " + x.index + ")";
@@ -879,18 +953,35 @@ tool("diff", "文本对比", function () {
 
 // 9. Hash
 tool("hash", "哈希计算", function () {
-  h('<h1>哈希计算</h1><div class="desc">MD5 / SHA-1 / SHA-256 / SHA-512(纯 JS 实现,http 环境也可用)</div>'
-    + '<textarea id="s" placeholder="输入文本"></textarea>'
-    + '<div class="row"><button class="btn" id="go">计算</button></div>'
-    + '<div class="output" id="out"></div>'
-    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
-  q("#go").onclick = function () {
+  h('<div class="tool-wrap">'
+    + '<h1>哈希计算</h1><div class="desc">输入文本实时计算 MD5 / SHA-1 / SHA-256 / SHA-512 · 点击任意一行结果即可复制</div>'
+    + '<div class="tcard">'
+    + '<label>输入文本</label><textarea id="s" placeholder="输入或粘贴文本,自动实时计算"></textarea>'
+    + '<div class="hlist" id="out"></div>'
+    + '</div></div>');
+  var ALGOS = [["MD5", md5], ["SHA-1", sha1], ["SHA-256", sha256], ["SHA-512", sha512]];
+  function calc() {
     var data = new TextEncoder().encode(q("#s").value);
-    q("#out").className = "output ok";
-    q("#out").innerText = "MD5:     " + md5(data) + "\nSHA-1:   " + sha1(data) + "\nSHA-256: " + sha256(data) + "\nSHA-512: " + sha512(data);
-  };
-  q("#go").click();
-  q("#cp").onclick = copyOut;
+    var box = q("#out");
+    box.innerHTML = "";
+    ALGOS.forEach(function (a) {
+      var row = document.createElement("div");
+      row.className = "hrow";
+      var name = document.createElement("span");
+      name.className = "hname";
+      name.textContent = a[0];
+      var val = document.createElement("span");
+      val.className = "hval";
+      val.textContent = a[1](data);
+      val.title = "点击复制 " + a[0];
+      val.onclick = function () { copyText(val.textContent); };
+      row.appendChild(name);
+      row.appendChild(val);
+      box.appendChild(row);
+    });
+  }
+  q("#s").oninput = calc;
+  calc();
 }, "md5 sha1 sha256 sha512 哈希 散列 摘要 hash 加密 checksum");
 
 // 10. Color(极简版)
@@ -1197,44 +1288,7 @@ tool("unit", "单位换算", function () {
   rebuild();
 }, "单位 换算 长度 重量 温度 数据大小 斤 磅 米 英尺 unit convert");
 
-// 17. 计算器
-tool("calc", "计算器", function () {
-  h('<h1>计算器</h1><div class="desc">支持 + - * / % ( ) 和幂运算 ^ · 回车计算</div>'
-    + '<input type="text" id="s" placeholder="如 (1+2)*3^2 或 10/4">'
-    + '<div class="row"><button class="btn" id="go">计算</button></div>'
-    + '<div class="output" id="out"></div>'
-    + '<div class="row"><button class="btn ghost" id="cp">复制结果</button></div>');
-  q("#go").onclick = function () {
-    var expr = q("#s").value
-      .replace(/[×✕]/g, "*").replace(/[÷]/g, "/")
-      .replace(/,/g, "").replace(/\^/g, "**");
-
-    if (!expr.trim()) return;
-    if (!/^[\d+\-*/().%\s]+$/.test(expr)) {
-      q("#out").className = "output err";
-      q("#out").innerText = "X 只支持数字和 + - * / % ( ) ^ 运算符";
-      return;
-    }
-    try {
-      var v = Function('"use strict";return (' + expr + ")")();
-      if (typeof v !== "number" || !isFinite(v)) {
-        q("#out").className = "output err";
-        q("#out").innerText = "X 结果无效(如除以 0)";
-        return;
-      }
-      v = Math.round(v * 1e10) / 1e10;
-      q("#out").className = "output ok";
-      q("#out").innerText = "= " + v;
-    } catch (e) {
-      q("#out").className = "output err";
-      q("#out").innerText = "X 表达式语法错误";
-    }
-  };
-  q("#s").onkeydown = function (e) { if (e.key === "Enter") q("#go").click(); };
-  q("#cp").onclick = copyOut;
-}, "计算器 表达式 求值 calculator 算式 加减乘除");
-
-// 18. 日期计算
+// 17. 日期计算
 tool("datecalc", "日期计算", function () {
   h('<h1>日期计算</h1><div class="desc">日期相差天数 / 日期加减</div>'
     + '<label>① 两个日期相差多少天</label>'
@@ -1364,10 +1418,10 @@ tool("qr", "二维码生成", function () {
 // ---- Boot:单栏导航 + 图标 + 搜索 ----
 var ICONS = {
   json: "{}", ts: "⏱", b64: "64", url: "%", uuid: "ID", jwt: "J", re: ".*", diff: "±", hash: "#", color: "◐",
-  radix: "0x", wc: "文", case: "Aa", pwd: "***", htmlent: "&", unit: "⇄", calc: "=", datecalc: "📅", ip: "IP", qr: "▩"
+  radix: "0x", wc: "文", case: "Aa", pwd: "***", htmlent: "&", unit: "⇄", datecalc: "📅", ip: "IP", qr: "▩"
 };
 // 顶栏直接展示的 10 个热门工具(按使用率排序),其余收进「更多」菜单
-var HOT_IDS = ["json", "ts", "b64", "url", "re", "jwt", "hash", "calc", "uuid", "qr"];
+var HOT_IDS = ["json", "ts", "b64", "url", "re", "jwt", "hash", "uuid", "qr", "diff"];
 var navL = document.getElementById("nav");
 var moreMenu = document.getElementById("more-menu");
 var navBtns = [];
