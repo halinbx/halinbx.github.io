@@ -2,6 +2,10 @@ name: Bing Index Check
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/bing-check.yml"
+      - "TRIGGER_BING_CHECK"
 
 jobs:
   bing-check:
