@@ -1,0 +1,37 @@
+Bing Index Check @ 2026-09-08 02:22 UTC from GitHub Actions runner
+===== 1. www.bing.com intl (ensearch) =====
+HTTP 200 size 123204 final https://www.bing.com/search?q=site%3Aowntools.cn&count=30&ensearch=1
+<cite>https://www.amazon.com</cite>
+<cite>https://www.amazon.com › es</cite>
+<cite>https://sellercentral.amazon.com</cite>
+<cite>https://music.amazon.com</cite>
+<cite>https://amc.amazon.com</cite>
+<cite>https://hiring.amazon.com</cite>
+<cite>https://hiring.amazon.com › app</cite>
+<cite>https://aws.amazon.com</cite>
+<cite>https://business.amazon.com › en › login</cite>
+<cite>https://read.amazon.com</cite>
+owntools hits: 9
+===== 2. www.bing.com default =====
+HTTP 200 size 126309 final https://www.bing.com/search?q=site%3Aowntools.cn&count=30
+<cite>https://www.azquotes.com</cite>
+owntools hits: 9
+===== 3. global.bing.com =====
+HTTP 200 size 125646 final https://www.bing.com/search?q=site%3Aowntools.cn&count=30
+<cite>https://forums.commentcamarche.net › forum</cite>
+<cite>https://forums.commentcamarche.net › forum</cite>
+<cite>https://es.ccm.net › ... › redes-sociales-y-mensajeria</cite>
+<cite>https://es.ccm.net › ... › redes-sociales-y-mensajeria › redes-sociales › faceb…</cite>
+<cite>https://www.zdnet.fr</cite>
+<cite>https://www.zdnet.fr › actualites › microsoft-bing-a-la-sauce-facebook-pour-c…</cite>
+<cite>https://forums.commentcamarche.net › forum</cite>
+<cite>https://es.ccm.net › ... › redes-sociales-y-mensajeria</cite>
+<cite>https://es.ccm.net › ... › redes-sociales-y-mensajeria</cite>
+<cite>https://forums.commentcamarche.net › forum</cite>
+owntools hits: 8
+===== 4. brand word owntools =====
+HTTP 200 size 126600 final https://www.bing.com/search?q=owntools&count=30&ensearch=1
+owntools hits: 8
+===== 5. DuckDuckGo (Bing index cross-check) =====
+HTTP 202 size 14224
+owntools hits: 2
