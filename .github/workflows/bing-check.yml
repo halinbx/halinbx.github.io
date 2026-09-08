@@ -7,38 +7,59 @@ on:
       - ".github/workflows/bing-check.yml"
       - "TRIGGER_BING_CHECK"
 
+permissions:
+  contents: write
+
 jobs:
   bing-check:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Query Bing site:owntools.cn (intl)
         run: |
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+          OUT=.github/bing_check_result.txt
+          {
+          echo "Bing Index Check @ $(date -u '+%Y-%m-%d %H:%M UTC') from GitHub Actions runner"
+
           echo "===== 1. www.bing.com intl (ensearch) ====="
-          curl -sL --max-time 30 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" \
+          curl -sL --max-time 30 -A "$UA" \
             "https://www.bing.com/search?q=site%3Aowntools.cn&count=30&ensearch=1" -o b1.html -w "HTTP %{http_code} size %{size_download} final %{url_effective}\n"
           grep -o '<cite[^>]*>[^<]*</cite>' b1.html | head -30 || echo "(no cite)"
           echo "owntools hits: $(grep -c 'owntools' b1.html || true)"
 
           echo "===== 2. www.bing.com default ====="
-          curl -sL --max-time 30 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" \
+          curl -sL --max-time 30 -A "$UA" \
             "https://www.bing.com/search?q=site%3Aowntools.cn&count=30" -o b2.html -w "HTTP %{http_code} size %{size_download} final %{url_effective}\n"
           grep -o '<cite[^>]*>[^<]*</cite>' b2.html | head -30 || echo "(no cite)"
           echo "owntools hits: $(grep -c 'owntools' b2.html || true)"
 
           echo "===== 3. global.bing.com ====="
-          curl -sL --max-time 30 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" \
+          curl -sL --max-time 30 -A "$UA" \
             "https://global.bing.com/search?q=site%3Aowntools.cn&count=30" -o b3.html -w "HTTP %{http_code} size %{size_download} final %{url_effective}\n"
           grep -o '<cite[^>]*>[^<]*</cite>' b3.html | head -30 || echo "(no cite)"
           echo "owntools hits: $(grep -c 'owntools' b3.html || true)"
 
           echo "===== 4. brand word owntools ====="
-          curl -sL --max-time 30 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" \
+          curl -sL --max-time 30 -A "$UA" \
             "https://www.bing.com/search?q=owntools&count=30&ensearch=1" -o b4.html -w "HTTP %{http_code} size %{size_download} final %{url_effective}\n"
           grep -o '<cite[^>]*>[^<]*</cite>' b4.html | head -30 || echo "(no cite)"
           echo "owntools hits: $(grep -c 'owntools' b4.html || true)"
 
           echo "===== 5. DuckDuckGo (Bing index cross-check) ====="
-          curl -sL --max-time 30 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" \
+          curl -sL --max-time 30 -A "$UA" \
             "https://html.duckduckgo.com/html/?q=site%3Aowntools.cn" -o d1.html -w "HTTP %{http_code} size %{size_download}\n"
           grep -o 'result__a[^>]*href="[^"]*"' d1.html | head -20 || echo "(no result)"
           echo "owntools hits: $(grep -c 'owntools' d1.html || true)"
+          } | tee "$OUT"
+
+          cat "$OUT" >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Commit result
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/bing_check_result.txt
+          git diff --cached --quiet && echo "no changes" || (git commit -m "chore: bing check result [skip ci]" && git push)
