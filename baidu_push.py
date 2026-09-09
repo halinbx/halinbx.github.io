@@ -6,10 +6,9 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 
 TOKEN = "knadDIOVEx2Icbhn"   # owntools.cn 的 API 推送 token
 SITE = "https://owntools.cn"
-# 当前 19 个工具的 hash 直达路由(与 js/app.js TOOLS 数组一致,2026/9/9 核对)
-TOOL_HASHES = ["json", "ts", "b64", "url", "uuid", "jwt", "re", "diff", "hash",
-               "color", "radix", "wc", "case", "pwd", "htmlent", "unit",
-               "datecalc", "ip", "qr"]
+# 9/9 精简后 10 个工具的 hash 直达路由(与 js/app.js KEEP_IDS 一致)
+# 其中 qr 需联网,其余 9 个纯前端
+TOOL_HASHES = ["json", "ts", "b64", "url", "uuid", "jwt", "re", "diff", "hash", "qr"]
 URLS = ["https://owntools.cn/"] + ["https://owntools.cn/#" + h for h in TOOL_HASHES]
 
 body = "\n".join(URLS).encode("utf-8")

@@ -1415,39 +1415,25 @@ tool("qr", "二维码生成", function () {
   };
 }, "二维码 qrcode 生成 扫码 跳转 分享");
 
-// ---- Boot:单栏导航 + 图标 + 搜索 ----
+// ---- Boot:单栏导航 + 图标 + 搜索(9/9 精简:只保留 10 个工具,删除「更多」菜单) ----
 var ICONS = {
-  json: "{}", ts: "⏱", b64: "64", url: "%", uuid: "ID", jwt: "J", re: ".*", diff: "±", hash: "#", color: "◐",
-  radix: "0x", wc: "文", case: "Aa", pwd: "***", htmlent: "&", unit: "⇄", datecalc: "📅", ip: "IP", qr: "▩"
+  json: "{}", ts: "⏱", b64: "64", url: "%", uuid: "ID", jwt: "J", re: ".*", diff: "±", hash: "#", qr: "▩"
 };
-// 顶栏直接展示的 10 个热门工具(按使用率排序),其余收进「更多」菜单
-var HOT_IDS = ["json", "ts", "b64", "url", "re", "jwt", "hash", "uuid", "qr", "diff"];
+// 9/9 精简:站点仅保留以下 10 个工具(其余注册会被过滤,hash 直达也一并失效,自动回落到默认工具)
+var KEEP_IDS = ["json", "ts", "b64", "url", "uuid", "jwt", "re", "diff", "hash", "qr"];
+for (var ki = TOOLS.length - 1; ki >= 0; ki--) {
+  if (KEEP_IDS.indexOf(TOOLS[ki].id) < 0) TOOLS.splice(ki, 1);
+}
 var navL = document.getElementById("nav");
-var moreMenu = document.getElementById("more-menu");
 var navBtns = [];
 TOOLS.forEach(function (t) {
   var b = document.createElement("button");
   b.innerHTML = '<span class="ico">' + ICONS[t.id] + "</span>" + esc(t.name);
   b.dataset.kw = (t.id + " " + t.name + " " + t.kw).toLowerCase();
   b.dataset.toolId = t.id;
-  b.onclick = function () { openTool(t.id); closeMore(); };
-  if (HOT_IDS.indexOf(t.id) >= 0) {
-    navL.appendChild(b);
-  } else if (moreMenu) {
-    moreMenu.appendChild(b);
-  }
+  b.onclick = function () { openTool(t.id); };
+  navL.appendChild(b);
   navBtns.push(b);
-});
-// 「更多」下拉菜单开关
-var moreWrap = document.getElementById("more-wrap");
-var moreBtn = document.getElementById("more-btn");
-function closeMore() { if (moreWrap) moreWrap.classList.remove("open"); }
-if (moreBtn) {
-  moreBtn.onclick = function (e) { e.stopPropagation(); moreWrap.classList.toggle("open"); };
-}
-document.addEventListener("click", function (e) {
-  if (moreWrap && moreWrap.contains(e.target)) return;
-  closeMore();
 });
 
 // ---- 搜索:过滤菜单,回车打开第一个匹配 ----
