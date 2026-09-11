@@ -1,0 +1,92 @@
+DNS Deep Check @ 2026-09-11 07:41 UTC from GitHub Actions runner
+
+===== 1. Recursive (runner default resolver) =====
+-- A --
+185.199.110.153
+185.199.108.153
+185.199.111.153
+185.199.109.153
+-- AAAA --
+-- NS --
+dns17.hichina.com.
+dns18.hichina.com.
+
+===== 2. Delegation chain: root -> cn -> owntools.cn (dig +trace) =====
+cn.			172800	IN	NS	a.dns.cn.
+cn.			172800	IN	NS	b.dns.cn.
+cn.			172800	IN	NS	c.dns.cn.
+cn.			172800	IN	NS	d.dns.cn.
+cn.			172800	IN	NS	e.dns.cn.
+cn.			172800	IN	NS	ns.cernet.net.
+owntools.cn.		86400	IN	NS	dns17.hichina.com.
+owntools.cn.		86400	IN	NS	dns18.hichina.com.
+owntools.cn.		600	IN	A	185.199.108.153
+owntools.cn.		600	IN	A	185.199.111.153
+owntools.cn.		600	IN	A	185.199.109.153
+owntools.cn.		600	IN	A	185.199.110.153
+
+===== 3. .cn TLD servers view (is delegation visible?) =====
+-- @a.dns.cn NS --
+-- @c.dns.cn NS --
+-- @e.dns.cn NS --
+-- @g.dns.cn NS --
+dig: couldn't get address for 'g.dns.cn': not found
+
+===== 4. Authoritative hichina: UDP x3, timing =====
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 5775
+;; Query time: 187 msec
+;; SERVER: 120.76.107.60#53(dns17.hichina.com) (UDP)
+--
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 55555
+;; Query time: 163 msec
+;; SERVER: 39.96.153.60#53(dns17.hichina.com) (UDP)
+--
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 64997
+;; Query time: 178 msec
+;; SERVER: 139.224.142.110#53(dns17.hichina.com) (UDP)
+--
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 2430
+;; Query time: 188 msec
+;; SERVER: 120.76.107.61#53(dns18.hichina.com) (UDP)
+--
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 63023
+;; Query time: 182 msec
+;; SERVER: 139.224.142.98#53(dns18.hichina.com) (UDP)
+--
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 27545
+;; Query time: 160 msec
+;; SERVER: 39.96.153.38#53(dns18.hichina.com) (UDP)
+--
+
+===== 5. Authoritative via TCP (Bing fallback path) =====
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 4803
+;; Query time: 156 msec
+;; SERVER: 39.96.153.60#53(dns17.hichina.com) (TCP)
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 22100
+;; Query time: 181 msec
+;; SERVER: 139.224.142.98#53(dns18.hichina.com) (TCP)
+
+===== 6. EDNS probe (some auth servers drop EDNS) =====
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> +edns=0 +noednsneg +time=5 +tries=1 @dns17.hichina.com owntools.cn A
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 4572
+;; flags: qr aa rd; QUERY: 1, ANSWER: 4, AUTHORITY: 0, ADDITIONAL: 1
+; EDNS: version: 0, flags:; udp: 1232
+;; Query time: 181 msec
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 36659
+;; flags: qr aa rd; QUERY: 1, ANSWER: 4, AUTHORITY: 0, ADDITIONAL: 0
+;; Query time: 157 msec
+
+===== 7. Public DoH views =====
+{"Status":0,"TC":false,"RD":true,"RA":true,"AD":false,"CD":false,"Question":[{"name":"owntools.cn.","type":1}],"Answer":[{"name":"owntools.cn.","type":1,"TTL":600,"data":"185.199.108.153"},{"name":"owntools.cn.","type":1,"TTL":600,"data":"185.199.110.153"},{"name":"owntools.cn.","type":1,"TTL":600,"data":"185.199.109.153"},{"name":"owntools.cn.","type":1,"TTL":600,"data":"185.199.111.153"}],"Comment":"Response from 120.76.107.38."}
+{"Status":0,"TC":false,"RD":true,"RA":true,"AD":false,"CD":false,"Question":[{"name":"owntools.cn","type":1}],"Answer":[{"name":"owntools.cn","type":1,"TTL":600,"data":"185.199.111.153"},{"name":"owntools.cn","type":1,"TTL":600,"data":"185.199.108.153"},{"name":"owntools.cn","type":1,"TTL":600,"data":"185.199.109.153"},{"name":"owntools.cn","type":1,"TTL":600,"data":"185.199.110.153"}]}
+{"Status":0,"TC":false,"RD":true,"RA":true,"AD":false,"CD":false,"Question":[{"name":"owntools.cn.","type":2}],"Answer":[{"name":"owntools.cn.","type":2,"TTL":21600,"data":"dns17.hichina.com."},{"name":"owntools.cn.","type":2,"TTL":21600,"data":"dns18.hichina.com."}],"Comment":"Response from 2408:4009:501::25."}
+
+===== 8. CAA + HTTPS fetch sanity =====
+subject=CN = www.owntools.cn
+X509v3 Subject Alternative Name: 
+    DNS:owntools.cn, DNS:www.owntools.cn
+HTTP/2 200 
+server: GitHub.com
+content-type: text/html; charset=utf-8
+last-modified: Fri, 11 Sep 2026 07:41:59 GMT
+access-control-allow-origin: *
