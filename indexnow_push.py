@@ -15,6 +15,7 @@ URLS = ["https://owntools.cn/"] + ["https://owntools.cn/#" + h for h in TOOL_HAS
 ENDPOINTS = [
     "https://api.indexnow.org/indexnow",
     "https://www.bing.com/indexnow",
+    "https://yandex.com/indexnow",  # 9/11 新增,reset 分叉时丢失,现补回
 ]
 
 body = json.dumps({"host": HOST, "key": KEY,
